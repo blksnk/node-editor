@@ -1,0 +1,25 @@
+:root {
+  --white: white;
+  --white-90: rgba(255, 255, 255, 0.87);
+  --white-50: rgba(255, 255, 255, 0.5);
+  --light-grey: #C0C0C0;
+  --dark-grey: #353535;
+  --off-black: #212121;
+  --black-90: rgba(0, 0, 0, 0.87);
+  --black-50: rgba(0, 0, 0, 0.5);
+  --black: #000;
+
+  --number: #5EACCD;
+  --boolean: #AA5ECD;
+  --string: #C3C70C;
+  --object: #61BB6A;
+  --any: var(--white);
+  --property: #FFAE33;
+
+  --unit: 12px;
+  --unit-h: calc(var(--unit) / 2);
+  --unit-d: calc(var(--unit) * 2);
+  --unit-hh: calc(var(--unit) / 4);
+  --unit-dd: calc(var(--unit) * 4);
+  --unit-n: calc(var(--unit) * -1);
+}
