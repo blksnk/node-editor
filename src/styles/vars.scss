@@ -1,0 +1,79 @@
+:root {
+  --white: white;
+  --white-90: rgba(255, 255, 255, 0.87);
+  --white-50: rgba(255, 255, 255, 0.5);
+  --light-grey: #C0C0C0;
+  --medium-grey: #515151;
+  --dark-grey: #353535;
+  --off-black: #212121;
+  --off-black-50: rgba(33, 33, 33, 0.5);
+  --black-90: rgba(0, 0, 0, 0.87);
+  --black-50: rgba(0, 0, 0, 0.5);
+  --black: #0B0B0B;
+  --black--pure: #000;
+
+  --number: #5CCEFF;
+  --boolean: #3C4DE9;
+  --string: #AFB203;
+  --object: #D48AF6;
+  --any: var(--white);
+  --property: #FFAE33;
+  --array: #61BB6A;
+
+  --unit: 12px;
+  --unit-h: calc(var(--unit) / 2);
+  --unit-d: calc(var(--unit) * 2);
+  --unit-hh: calc(var(--unit) / 4);
+  --unit-dd: calc(var(--unit) * 4);
+  --unit-n: calc(var(--unit) * -1);
+
+  --f-sans: Inter, Avenir, Helvetica, Arial, sans-serif;
+  --f-mono: Fira Code, monospace;
+}
+
+@mixin type-var($prop: '--type') {
+  &.number {
+    #{$prop}: var(--number);
+  }
+
+  &.object {
+    #{$prop}: var(--object);
+  }
+
+  &.string {
+    #{$prop}: var(--string);
+  }
+
+  &.boolean {
+    #{$prop}: var(--boolean);
+  }
+
+  &.any {
+    #{$prop}: var(--any);
+  }
+
+  &.property {
+    #{$prop}: var(--property);
+  }
+}
+
+@mixin node-title {
+  font-family: var(--f-sans);
+  font-weight: 600;
+  font-size: var(--unit);
+  color: var(--white);
+}
+
+@mixin node-io-name {
+  font-family: var(--f-sans);
+  font-weight: 400;
+  font-size: var(--unit);
+  color: var(--white);
+}
+
+@mixin node-io-value {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--white-50);
+}

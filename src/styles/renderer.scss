@@ -1,3 +1,5 @@
+@use './vars.scss';
+
 .node__renderer__root {
   height: 100%;
   width: 100%;
@@ -25,7 +27,8 @@
   --bg: var(--dark-grey);
   border-top-left-radius: var(--unit-h);
   border-top-right-radius: var(--unit-h);
-  padding: var(--unit) calc(var(--unit) * 0.75 + 1px);
+  padding: var(--unit);
+  padding-right: calc(var(--unit) * 0.75);
   background: var(--bg);
   color: var(--white);
   pointer-events: all;
@@ -42,18 +45,23 @@
     &.node__type__number {
       --bg: var(--number);
     }
+
     &.node__type__object {
       --bg: var(--object);
     }
+
     &.node__type__string {
       --bg: var(--string);
     }
+
     &.node__type__boolean {
       --bg: var(--boolean);
     }
+
     &.node__type__any {
       --bg: var(--any);
     }
+
     &.node__type__property {
       --bg: var(--property);
     }
@@ -61,6 +69,7 @@
 }
 
 .node__card__title {
+  @include vars.node-title;
   pointer-events: none;
 }
 
@@ -76,39 +85,69 @@
   padding: 0
 }
 
+
 .node__io__row {
   display: flex;
   justify-content: flex-start;
   align-items: center;
   gap: var(--unit-h);
   pointer-events: all;
+  padding: var(--unit-h) 0;
+
+  @include vars.type-var(--type);
+
+  .node__io__row__container {
+    flex-grow: 1;
+    padding: var(--unit-hh);
+    border-radius: 2px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   &.node__io__output {
     justify-content: flex-end;
     margin-right: var(--unit-n);
+    margin-left: var(--unit-hh);
+
+    &.node__io__editable .node__io__row__container {
+      justify-content: space-between
+    }
   }
 
   &.node__io__input {
     justify-content: flex-start;
     margin-left: var(--unit-n);
+    margin-right: var(--unit-h);
+
   }
 
-  &:hover .node__io__indicator:not(.node__io__active) {
+  &:hover .node__io__indicator:not(.node__io__connected) {
     border-width: 3px;
   }
+
+  &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input) .node__io__row__container {
+    background: var(--dark-grey);
+
+    &:hover {
+      background: var(--medium-grey);
+    }
+  }
+
 }
 
+
 .node__io__indicator {
-  --indicator-color: var(--white-90);
   height: var(--unit);
   width: var(--unit);
-  border: 1px solid var(--indicator-color);
+  border: 1px solid var(--type);
   border-radius: 50%;
   background: var(--off-black);
   z-index: 11;
 
   &.node__io__active {
-    background-color: var(--indicator-color);
+    background-color: var(--type);
     transform: translateZ(0)
   }
 
@@ -116,28 +155,29 @@
     border-width: 3px;
   }
 
-  &.number {
-    --indicator-color: var(--number);
-  }
-  &.object {
-    --indicator-color: var(--object);
-  }
-  &.string {
-    --indicator-color: var(--string);
-  }
-  &.boolean {
-    --indicator-color: var(--boolean);
-  }
-  &.any {
-    --indicator-color: var(--any);
-  }
-  &.property {
-    --indicator-color: var(--property);
-  }
+}
+
+.node__io__name {
+  @include vars.node-io-name
 }
 
 .node__io__name, .node__io__indicator {
   pointer-events: none;
+}
+
+.node__io__text__input {
+  border: none;
+  background: none;
+  padding: 0;
+  height: 100%;
+  flex-grow: 1;
+  text-align: right;
+  @include vars.node-io-value;
+
+  &:focus {
+    outline: none;
+    color: var(--light-grey);
+  }
 }
 
 .node__connection__root {

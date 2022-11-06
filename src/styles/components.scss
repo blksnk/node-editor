@@ -1,0 +1,27 @@
+
+.ui__toggle {
+  height: 20px;
+  width: calc(var(--unit) * 3);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  background: var(--dark-grey);
+  border-radius: 10px;
+
+  .ui__toggle__handle {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background-color: var(--light-grey);
+  }
+
+  &.active {
+    justify-content: flex-end;
+
+    .ui__toggle__handle {
+      background-color: var(--boolean);
+    }
+  }
+}

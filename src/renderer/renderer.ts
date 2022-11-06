@@ -4,22 +4,16 @@ import {
   RendererNode,
   RendererOptions,
   Vec2,
-} from "./renderer.types";
-import {
-  createCard,
-  getIoInformation,
-  getNodeIoId,
-  setCardPosition,
-  updateAllCardIos,
-} from "./card";
+} from './renderer.types';
 import {
   DefinedIOType,
   IOTypeName,
   NodeConnectionInfo,
+  NodeIO,
   NodeWithId,
-} from "../node/node.types";
-import { Runtime } from "../runtime/runtime";
-import { clickPos, vecDelta } from "../utils/vectors";
+} from '../node/node.types';
+import { Runtime } from '../runtime/runtime';
+import { clickPos, vecDelta } from '../utils/vectors';
 import {
   assignIoPositions,
   clearPendingConnection,
@@ -27,9 +21,19 @@ import {
   getIOIndicatorPosition,
   renderConnections,
   renderPendingConnection,
-} from "./connection";
-import { NodeConnection } from "../runtime/runtime.types";
-import { findById } from "../utils/data";
+  resizeSvg,
+} from './connection';
+import { NodeConnection } from '../runtime/runtime.types';
+import { findById } from '../utils/data';
+import {
+  createCard,
+  setCardPosition,
+  updateAllCardIos,
+} from './components/card';
+import { getIoInformation } from './components/ioRow';
+import { KeyboardHandler } from '../keyboard/keyboard';
+import { element } from '../utils/document';
+import { cssSelectors } from './components/cssSelectors';
 
 export class Renderer {
   root: HTMLDivElement;
@@ -38,6 +42,7 @@ export class Renderer {
   nodeCards: RendererNode<DefinedIOType, IOTypeName>[] = [];
   nodeConnections: RendererConnection[] = [];
   runtime: Runtime;
+  keyboard: KeyboardHandler;
   mouseDownPos: Vec2 = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   mousePos: Vec2 = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   mouseDown = false;
@@ -47,16 +52,23 @@ export class Renderer {
     outputNode: undefined,
     active: false,
   };
-  selectedCardId: number | undefined = undefined;
-
+  movingCardIds: Set<number> = new Set<number>();
+  selectedNodeId: number | undefined = undefined;
 
   constructor(options: RendererOptions) {
     this.target = options.target;
     this.runtime = options.runtime;
-    this.root = document.createElement('div');
+    this.keyboard = options.keyboard;
+    this.root = element<HTMLDivElement>('div');
     this.connectionRoot = createConnectionSvg();
     this.attachRoot();
     this.initGlobalEvents();
+  }
+
+  get movingNodeCards(): RendererNode<DefinedIOType, IOTypeName>[] {
+    return Array.from(this.movingCardIds)
+      .map((id) => this.findNodeCard(id))
+      .filter((card) => !!card) as RendererNode<DefinedIOType, IOTypeName>[];
   }
 
   attachRoot() {
@@ -65,17 +77,21 @@ export class Renderer {
     this.root.appendChild(this.connectionRoot);
   }
 
-  attachNode(node: NodeWithId<DefinedIOType, IOTypeName>, position: Vec2 = {
-    x: window.innerWidth / 2,
-    y: window.innerHeight / 3,
-  }) {
+  attachNode(
+    node: NodeWithId<DefinedIOType, IOTypeName>,
+    position: Vec2 = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 3,
+    },
+  ) {
     // create node card and attach it to dom
-    const {
-      card,
-      cardHeader,
-      inputs,
-      outputs,
-    } = createCard(node, position, this.onCardSelect.bind(this));
+    const { card, cardHeader, inputs, outputs } = createCard(
+      node,
+      position,
+      () => this.selectCard(node.id),
+      (ioId: number, value: DefinedIOType, kind: NodeIO['kind']) =>
+        this.runtime.setNodeIoValue(node.id, ioId, value, kind),
+    );
     this.root.appendChild(card);
     const rendererNode = {
       card,
@@ -93,36 +109,59 @@ export class Renderer {
     this.runtime.updateConnections();
   }
 
-  initCardEvents({ io, header }: RendererNode<DefinedIOType, IOTypeName>) {
+  initCardEvents({ io, header, id }: RendererNode<DefinedIOType, IOTypeName>) {
     const eventOptions = { passive: false };
-    header.addEventListener('pointerdown', this.onCardHeaderDown.bind(this));
-    io.inputs.forEach(element => {
-      element.addEventListener('pointerdown', this.onInputDown.bind(this), eventOptions);
-      element.addEventListener('pointerup', this.onInputUp.bind(this), eventOptions);
+    header.addEventListener('pointerdown', (e) => this.onCardHeaderDown(e, id));
+    io.inputs.forEach((element) => {
+      element.addEventListener(
+        'pointerdown',
+        (e) => this.onInputDown(e, element),
+        eventOptions,
+      );
+      element.addEventListener(
+        'pointerup',
+        (e) => this.onInputUp(e, element),
+        eventOptions,
+      );
     });
 
-    io.outputs.forEach(element => {
-      element.addEventListener('pointerdown', this.onOutputDown.bind(this), eventOptions);
-      element.addEventListener('pointerup', this.onOutputUp.bind(this), eventOptions);
+    io.outputs.forEach((element) => {
+      element.addEventListener(
+        'pointerdown',
+        (e) => this.onOutputDown(e, element),
+        eventOptions,
+      );
+      element.addEventListener(
+        'pointerup',
+        (e) => this.onOutputUp(e, element),
+        eventOptions,
+      );
     });
   }
 
   initGlobalEvents() {
     window.addEventListener('pointerup', this.onGlobalUp.bind(this));
     window.addEventListener('pointermove', this.onGlobalMove.bind(this));
+    window.addEventListener('resize', this.onWindowResize.bind(this));
   }
 
   findNodeCard(query: number) {
     return findById(this.nodeCards, query);
   }
 
-  findConnection(inputNodeId: number, inputIoId: number, outputNodeId: number, outputIoId: number) {
-    return this.nodeConnections.find(c => (
-      c.inputNode.id === inputNodeId
-      && c.inputNode.ioId === inputIoId
-      && c.outputNode.id === outputNodeId
-      && c.outputNode.ioId === outputIoId
-    ));
+  findConnection(
+    inputNodeId: number,
+    inputIoId: number,
+    outputNodeId: number,
+    outputIoId: number,
+  ) {
+    return this.nodeConnections.find(
+      (c) =>
+        c.inputNode.id === inputNodeId &&
+        c.inputNode.ioId === inputIoId &&
+        c.outputNode.id === outputNodeId &&
+        c.outputNode.ioId === outputIoId,
+    );
   }
 
   detachNode(id: number) {
@@ -139,17 +178,23 @@ export class Renderer {
 
   updateConnections(connections: NodeConnection[]) {
     this.nodeConnections = assignIoPositions(connections, this.nodeCards);
-    updateAllCardIos(this.nodeCards);
+    this.updateCardIos();
     renderConnections(this.nodeConnections, this.connectionRoot);
   }
 
-  onInputDown(e: PointerEvent) {
+  updateCardIos() {
+    updateAllCardIos(
+      this.nodeCards,
+      this.runtime.setNodeIoValue.bind(this.runtime),
+    );
+  }
+
+  onInputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
     const pos = clickPos(e);
     this.mouseDown = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
-    const el = e.target as HTMLLIElement;
     const info = getIoInformation(el);
     console.log(info);
 
@@ -163,37 +208,58 @@ export class Renderer {
   }
 
   disconnectNodes(info: NodeConnectionInfo) {
-    if (info.connected && typeof info.connection?.id === 'number' && typeof info.connection?.ioId === 'number') {
+    if (
+      info.connected &&
+      typeof info.connection?.id === 'number' &&
+      typeof info.connection?.ioId === 'number'
+    ) {
       // remove connection and start pending connection with previously connected input
-      breakConnection:
-      {
+      breakConnection: {
         // get actual connection, connected node, output data and element
         const outputNodeCard = this.findNodeCard(info.connection.id);
         if (!outputNodeCard) break breakConnection;
 
-        const connectedOutput = findById(outputNodeCard.node.outputs, info.connection.ioId);
-        const connectedOutputElement = findById(outputNodeCard.io.outputs, getNodeIoId(outputNodeCard.node.id, info.connection.ioId, true));
+        const connectedOutput = findById(
+          outputNodeCard.node.outputs,
+          info.connection.ioId,
+        );
+        const connectedOutputElement = findById(
+          outputNodeCard.io.outputs,
+          cssSelectors.ioRow.id(
+            outputNodeCard.node.id,
+            info.connection.ioId,
+            true,
+          ),
+        );
         if (!connectedOutputElement || !connectedOutput) break breakConnection;
 
-        const connection = this.findConnection(info.nodeId, info.ioId, info.connection.id, info.connection.ioId);
+        const connection = this.findConnection(
+          info.nodeId,
+          info.ioId,
+          info.connection.id,
+          info.connection.ioId,
+        );
         if (!connection) break breakConnection;
         // ask runtime to break connection
         this.runtime.breakConnection(connection);
 
         // start pending connection from previously connected output
-        this.setPendingConnectionIo(connectedOutputElement, {
-          nodeId: outputNodeCard.node.id,
-          ioId: info.connection.ioId,
-          type: connectedOutput.type,
-        }, 'outputNode');
+        this.setPendingConnectionIo(
+          connectedOutputElement,
+          {
+            nodeId: outputNodeCard.node.id,
+            ioId: info.connection.ioId,
+            type: connectedOutput.type,
+          },
+          'outputNode',
+        );
       }
     }
   }
 
-  onInputUp(e: PointerEvent) {
+  onInputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
     this.mousePos = clickPos(e);
-    const el = e.target as HTMLLIElement;
     const info = getIoInformation(el);
     // only allow connection between input and output nodes, not both of same kind
     if (this.pendingConnection.active && this.pendingConnection.outputNode) {
@@ -202,19 +268,22 @@ export class Renderer {
     }
   }
 
-  onOutputDown(e: PointerEvent) {
+  onOutputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
     const pos = clickPos(e);
     this.mouseDown = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
-    const el = e.target as HTMLLIElement;
     const info = getIoInformation(el);
     this.setPendingConnectionIo(el, info, 'outputNode');
     this.pendingConnection.active = true;
   }
 
-  setPendingConnectionIo(el: HTMLLIElement, info: Pick<ReturnType<typeof getIoInformation>, 'nodeId' | 'ioId' | 'type'>, kind: 'inputNode' | 'outputNode') {
+  setPendingConnectionIo(
+    el: HTMLLIElement,
+    info: Pick<ReturnType<typeof getIoInformation>, 'nodeId' | 'ioId' | 'type'>,
+    kind: 'inputNode' | 'outputNode',
+  ) {
     this.pendingConnection[kind] = {
       id: info.nodeId,
       ioId: info.ioId,
@@ -223,11 +292,10 @@ export class Renderer {
     };
   }
 
-  onOutputUp(e: PointerEvent) {
+  onOutputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
     this.mousePos = clickPos(e);
     console.log('o up');
-    const el = e.target as HTMLLIElement;
     const info = getIoInformation(el);
     // only allow connection between input and output nodes, not both of same kind
     if (this.pendingConnection.active && this.pendingConnection.inputNode) {
@@ -239,9 +307,9 @@ export class Renderer {
   attemptConnection() {
     // check if pending connection is between same types before committing to connection
     if (
-      this.pendingConnection.outputNode !== undefined
-      && this.pendingConnection.inputNode !== undefined
-      && this.pendingConnection.active
+      this.pendingConnection.outputNode !== undefined &&
+      this.pendingConnection.inputNode !== undefined &&
+      this.pendingConnection.active
     ) {
       console.log({ ...this.pendingConnection });
       this.runtime.connectNodes(this.pendingConnection);
@@ -270,20 +338,27 @@ export class Renderer {
     this.mousePos = clickPos(e);
     const delta = vecDelta(this.mousePos, lastMousePos);
     // handle card move
-    if (this.selectedCardId !== undefined && this.mouseDown && this.cardMoving) {
-      const card = this.findNodeCard(this.selectedCardId);
-      if (!card) return;
-      this.moveNodeCard(card, delta);
+    if (this.movingCardIds.size > 0 && this.mouseDown && this.cardMoving) {
+      if (this.movingNodeCards.length === 0) return;
+      this.movingNodeCards.forEach((card) => {
+        this.moveNodeCard(card, delta);
+      });
     }
     // handle pending connection
     connectionUpdate: if (this.pendingConnection.active) {
-      const connectionStart = this.pendingConnection.inputNode ?? this.pendingConnection.outputNode;
+      const connectionStart =
+        this.pendingConnection.inputNode ?? this.pendingConnection.outputNode;
       if (!connectionStart) {
         break connectionUpdate;
       }
       const startPos = connectionStart.position;
       const endPos = this.mousePos;
-      renderPendingConnection(startPos, endPos, connectionStart.type, this.connectionRoot);
+      renderPendingConnection(
+        startPos,
+        endPos,
+        connectionStart.type,
+        this.connectionRoot,
+      );
     }
   }
 
@@ -294,18 +369,24 @@ export class Renderer {
     this.runtime.updateConnections();
   }
 
-  onCardHeaderDown(e: PointerEvent) {
+  onCardHeaderDown(e: PointerEvent, nodeId: number) {
     const pos = clickPos(e);
     this.mouseDown = true;
     this.cardMoving = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
+    // set current node card as only one moving of user is not pressing shift
+    if (!this.keyboard.shift) {
+      this.movingCardIds.clear();
+    }
+    this.movingCardIds.add(nodeId);
   }
 
-  onCardSelect(id: number) {
-    if (!this.mouseDown) {
-      this.selectedCardId = id;
-    }
+  selectCard(id: number) {
+    this.selectedNodeId = id;
+  }
+
+  onWindowResize() {
+    resizeSvg(this.connectionRoot);
   }
 }
-

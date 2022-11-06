@@ -1,9 +1,11 @@
-import { DefinedIOType, IOTypeName, NodeWithId } from "../node/node.types";
-import { Runtime } from "../runtime/runtime";
+import { DefinedIOType, IOTypeName, NodeWithId } from '../node/node.types';
+import { Runtime } from '../runtime/runtime';
+import { KeyboardHandler } from '../keyboard/keyboard';
 
 export interface RendererOptions {
-  target: HTMLElement | HTMLBodyElement
-  runtime: Runtime
+  target: HTMLElement | HTMLBodyElement;
+  runtime: Runtime;
+  keyboard: KeyboardHandler;
 }
 
 export interface Vec2 {
@@ -13,11 +15,11 @@ export interface Vec2 {
 
 export interface RendererNode<T extends DefinedIOType, TN extends IOTypeName> {
   node: NodeWithId<T, TN>;
-  card: HTMLElement,
+  card: HTMLElement;
   io: {
     inputs: HTMLLIElement[];
     outputs: HTMLLIElement[];
-  }
+  };
   header: HTMLElement;
   id: number;
   position: Vec2;
@@ -39,7 +41,11 @@ export interface RendererConnection {
   id: number;
 }
 
-export type LineCommandFunction = (point: Vec2, index: number, points: Vec2[]) => string;
+export type LineCommandFunction = (
+  point: Vec2,
+  index: number,
+  points: Vec2[],
+) => string;
 
 export interface CompletedPendingRendererConnection {
   inputNode: RendererConnection['inputNode'];
@@ -47,23 +53,25 @@ export interface CompletedPendingRendererConnection {
   active: true;
 }
 
-export type PartialPendingRendererConnection = {
-  inputNode: RendererConnection['inputNode'];
-  outputNode: undefined;
-  active: true;
-} | {
-  inputNode: undefined;
-  outputNode: RendererConnection['outputNode'];
-  active: true;
-}
+export type PartialPendingRendererConnection =
+  | {
+      inputNode: RendererConnection['inputNode'];
+      outputNode: undefined;
+      active: true;
+    }
+  | {
+      inputNode: undefined;
+      outputNode: RendererConnection['outputNode'];
+      active: true;
+    };
 
 export type EmptyPendingRendererConnection = {
   inputNode: undefined;
-  outputNode:  undefined;
+  outputNode: undefined;
   active: false;
-}
+};
 
 export type PendingRendererConnection =
-  EmptyPendingRendererConnection
+  | EmptyPendingRendererConnection
   | PartialPendingRendererConnection
-  | CompletedPendingRendererConnection
+  | CompletedPendingRendererConnection;
