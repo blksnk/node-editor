@@ -15,6 +15,7 @@ export const ioRow = {
     textInput: 'node__io__text__input',
     toggle: 'node__io__toggle',
   },
+  multi: 'node__io__multi',
 } as const;
 
 export const nodeCard = {
@@ -26,12 +27,21 @@ export const nodeCard = {
   io: 'node__io',
   inputs: 'node__inputs',
   outputs: 'node__outputs',
+  helpButton: 'node__help__button',
   id: (nodeId: number) => `node__${nodeId}`,
   type: (t: DefinedIOType) => `node__type__${t}`,
   category: (c: NodeCategory) => `node__category__${c}`,
 } as const;
 
+export const ui = {
+  icon: 'ui__icon',
+  icons: {
+    help: 'ui__icon__help',
+  },
+};
+
 export const cssSelectors = {
   ioRow,
   nodeCard,
+  ui,
 } as const;

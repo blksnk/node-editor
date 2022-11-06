@@ -1,31 +1,15 @@
-import {
-  NodeIODefinition,
-  NodeOperation,
-  NodeOperationArgument,
-} from './node.types';
+import { NodeIODefinition, NodeOperation } from './node.types';
 import { Node } from './node';
+import { defaultValues, defineNodeIO } from './defaults';
 
-export class MathNode extends Node<number, 'number'> {
-  constructor(operation: NodeOperation<number, 'number'>) {
+export class MathNode extends Node<['number', 'number'], ['number']> {
+  constructor(operation: NodeOperation<['number', 'number'], ['number']>) {
     const inputs: NodeIODefinition[] = [
-      {
-        name: 'A',
-        type: 'number',
-        value: 0,
-        editable: true,
-      },
-      {
-        name: 'B',
-        type: 'number',
-        value: 0,
-        editable: true,
-      },
+      defineNodeIO('A', 'number', true, 0),
+      defineNodeIO('B', 'number', true, 0),
     ];
     const outputs: NodeIODefinition[] = [
-      {
-        name: 'Result',
-        type: 'number',
-      },
+      defineNodeIO('Result', 'number', false, defaultValues.undef()),
     ];
     super({
       inputs,
@@ -41,80 +25,92 @@ export class MathNode extends Node<number, 'number'> {
 
 export class AddMathNode extends MathNode {
   constructor() {
-    const operation: NodeOperation<number, 'number'> = (
-      inputs: NodeOperationArgument<number, 'number'>[],
+    const operation: NodeOperation<['number', 'number'], ['number']> = (
+      inputs,
     ) => {
       const a = inputs[0];
       const b = inputs[1];
-      return {
-        name: 'Result',
-        type: 'number',
-        value: a.value + b.value,
-      };
+      return [
+        {
+          name: 'Result',
+          type: 'number',
+          value: a.value + b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Add',
+      kind: 'math::add',
     });
   }
 }
 
 export class SubtractMathNode extends MathNode {
   constructor() {
-    const operation: NodeOperation<number, 'number'> = (
-      inputs: NodeOperationArgument<number, 'number'>[],
+    const operation: NodeOperation<['number', 'number'], ['number']> = (
+      inputs,
     ) => {
       const a = inputs[0];
       const b = inputs[1];
-      return {
-        name: 'Result',
-        type: 'number',
-        value: a.value - b.value,
-      };
+      return [
+        {
+          name: 'Result',
+          type: 'number',
+          value: a.value - b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Subtract',
+      kind: 'math::subtract',
     });
   }
 }
 
 export class MultiplyMathNode extends MathNode {
   constructor() {
-    const operation: NodeOperation<number, 'number'> = (
-      inputs: NodeOperationArgument<number, 'number'>[],
+    const operation: NodeOperation<['number', 'number'], ['number']> = (
+      inputs,
     ) => {
       const a = inputs[0];
       const b = inputs[1];
-      return {
-        name: 'Result',
-        type: 'number',
-        value: a.value * b.value,
-      };
+      return [
+        {
+          name: 'Result',
+          type: 'number',
+          value: a.value * b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Multiply',
+      kind: 'math::multiply',
     });
   }
 }
 
 export class DivideMathNode extends MathNode {
   constructor() {
-    const operation: NodeOperation<number, 'number'> = (
-      inputs: NodeOperationArgument<number, 'number'>[],
+    const operation: NodeOperation<['number', 'number'], ['number']> = (
+      inputs,
     ) => {
       const a = inputs[0];
       const b = inputs[1];
-      return {
-        name: 'Result',
-        type: 'number',
-        value: a.value / b.value,
-      };
+      return [
+        {
+          name: 'Result',
+          type: 'number',
+          value: a.value / b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Divide',
+      kind: 'math::divide',
     });
   }
 }

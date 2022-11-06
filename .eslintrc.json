@@ -42,7 +42,8 @@
       {
         "code": 120,
         "ignoreComments": true,
-        "ignoreTemplateLiterals": true
+        "ignoreTemplateLiterals": true,
+        "ignoreStrings": true
       }
     ]
     // Add your own rules here to override ones from the extended configs.

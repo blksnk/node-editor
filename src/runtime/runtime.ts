@@ -1,11 +1,5 @@
 import { Node } from '../node/node';
-import {
-  DefinedIOType,
-  IOType,
-  IOTypeName,
-  NodeIO,
-  NodeWithId,
-} from '../node/node.types';
+import { DefinedIOType, NodeIO, NodeWithId } from '../node/node.types';
 import { Renderer } from '../renderer/renderer';
 import { AnyNodeKey, NodeIndex } from '../node/nodeIndex';
 import {
@@ -19,7 +13,7 @@ import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
 
 export class Runtime {
-  nodes: NodeWithId<IOType, IOTypeName>[] = [];
+  nodes: NodeWithId[] = [];
   connections: NodeConnection[] = [];
   nextNodeId = 0;
   renderer: Renderer;
@@ -34,7 +28,7 @@ export class Runtime {
     });
   }
 
-  registerNode(node: Node<IOType, IOTypeName>, position?: Vec2) {
+  registerNode(node: Node, position?: Vec2) {
     const withId = node.assignId(this.nextNodeId);
     this.nextNodeId++;
     this.nodes.push(withId);
@@ -49,7 +43,7 @@ export class Runtime {
 
   createNode(k: AnyNodeKey, position?: Vec2) {
     const node = new NodeIndex[k]();
-    this.registerNode(node as Node<IOType, IOTypeName>, position);
+    this.registerNode(node as unknown as Node, position);
   }
 
   getNode(query: number) {
@@ -136,6 +130,7 @@ export class Runtime {
       if (!node) break valueSetter;
       console.log('set node value');
       node.setIoValue(ioId, value, kind);
+      this.renderer.updateCardIos();
     }
   }
 }

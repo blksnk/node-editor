@@ -4,14 +4,14 @@ import {
   MathNode,
   MultiplyMathNode,
   SubtractMathNode,
-} from "./math";
+} from './math';
 import {
   BooleanValueNode,
   NumberValueNode,
   ObjectValueNode,
   StringValueNode,
   ValueNode,
-} from "./value";
+} from './value';
 import {
   AndBooleanMathNode,
   BooleanMathNode,
@@ -21,7 +21,17 @@ import {
   OrBooleanMathNode,
   XNorBooleanMathNode,
   XOrBooleanMathNode,
-} from "./booleanMath";
+} from './booleanMath';
+import {
+  StringAppendNode,
+  StringDeleteAtNode,
+  StringDeleteNode,
+  StringJoinNode,
+  StringLengthNode,
+  StringPrependNode,
+  StringReplaceNode,
+  StringSliceNode,
+} from './string';
 
 export const MathNodeIndex = {
   'math::add': AddMathNode,
@@ -85,11 +95,22 @@ const GenericNodeKeys = [
   'generic::booleanmath',
 ] as const;
 
+const StringNodeKeys = [
+  'string::length',
+  'string::slice',
+  'string::replace',
+  'string::join',
+  'string::append',
+  'string::prepend',
+  'string::delete',
+  'string::deleteat',
+] as const;
 
 const AllNodeKeys = [
   ...MathNodeKeys,
   ...ValueNodeKeys,
   ...BooleanMathNodeKeys,
+  ...StringNodeKeys,
 ] as const;
 
 export const NodeIndex = {
@@ -108,6 +129,14 @@ export const NodeIndex = {
   'booleanmath::xor': XOrBooleanMathNode,
   'booleanmath::xnor': XNorBooleanMathNode,
   'booleanmath::not': NotBooleanMathNode,
+  'string::length': StringLengthNode,
+  'string::slice': StringSliceNode,
+  'string::replace': StringReplaceNode,
+  'string::join': StringJoinNode,
+  'string::append': StringAppendNode,
+  'string::prepend': StringPrependNode,
+  'string::delete': StringDeleteNode,
+  'string::deleteat': StringDeleteAtNode,
 } as const;
 
 export type AnyMathNodeKey = typeof MathNodeKeys[number];
@@ -117,7 +146,12 @@ export type AnyGenericNodeKey = typeof GenericNodeKeys[number];
 
 export type AnyNodeKey = typeof AllNodeKeys[number];
 
-export const isMathNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey => k.split('::')[0] === 'math';
-export const isValueNodeKey = (k: AnyNodeKey): k is AnyValueNodeKey => k.split('::')[0] === 'value';
-export const isGenericNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey => k.split('::')[0] === 'generic';
-export const isBooleanMathNodeKey = (k: AnyNodeKey): k is AnyBooleanMathNodeKey => k.split('::')[0] === 'booleanmath';
+export const isMathNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey =>
+  k.split('::')[0] === 'math';
+export const isValueNodeKey = (k: AnyNodeKey): k is AnyValueNodeKey =>
+  k.split('::')[0] === 'value';
+export const isGenericNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey =>
+  k.split('::')[0] === 'generic';
+export const isBooleanMathNodeKey = (
+  k: AnyNodeKey,
+): k is AnyBooleanMathNodeKey => k.split('::')[0] === 'booleanmath';

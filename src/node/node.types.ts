@@ -25,7 +25,32 @@ export const NodeCategories = [
   'math',
   'booleanMath',
   'base',
+  'runtime',
 ] as const;
+
+export type IOTypeMap<TN extends IOTypeName> = TN extends 'string'
+  ? string
+  : TN extends 'number'
+  ? number
+  : TN extends 'object'
+  ? Record<string, IOType>[]
+  : TN extends 'boolean'
+  ? boolean
+  : TN extends 'property'
+  ? PropertyIOType
+  : TN extends 'string[]'
+  ? string[]
+  : TN extends 'number[]'
+  ? number[]
+  : TN extends 'object[]'
+  ? Record<string, IOType>[]
+  : TN extends 'boolean[]'
+  ? boolean[]
+  : TN extends 'property[]'
+  ? PropertyIOType[]
+  : TN extends 'any[]'
+  ? undefined[]
+  : undefined;
 
 export const NodeTypeNames = [...IOTypeNames, 'base'] as const;
 
@@ -36,6 +61,8 @@ export type NodeCategory = typeof NodeCategories[number];
 export type IOArrayTypeName = typeof IOArrayTypeNames[number];
 
 export type IOTypeName = typeof IOTypeNames[number];
+
+export type DefinedIOTypeName = Exclude<IOTypeName, 'any' | 'any[]'>;
 
 export interface PropertyIOType<
   T extends DefinedIOType = DefinedIOType,
@@ -50,36 +77,41 @@ export interface PropertyIOType<
 export type IOArrayType =
   | number[]
   | string[]
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   | Record<string, IOType>[]
   | boolean[];
-
-export type IOType =
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+export type IOType = Exclude<
   | string
   | number
   | Record<string, unknown>
   | boolean
   | IOArrayType
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   | PropertyIOType
-  | undefined;
-
+  | undefined,
+  never
+>;
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 export type DefinedIOType = Exclude<IOType, undefined>;
 
-export interface NodeIO<
-  T extends DefinedIOType = DefinedIOType,
-  TN extends IOTypeName = IOTypeName,
-> {
+export interface NodeIO<TN extends IOTypeName = IOTypeName> {
   name: string;
   type: TN;
-  value: T;
+  value: IOTypeMap<TN>;
   connection?: {
     connected: boolean;
-    node: Node<T, TN>;
+    node: Node;
     ioId: number;
   };
   kind: 'input' | 'output';
   editable: boolean;
   multi: boolean;
-  node: Node<T, TN>;
+  node: Node;
 }
 
 export interface NodeOperationArgument<
@@ -91,10 +123,8 @@ export interface NodeOperationArgument<
   name: string;
 }
 
-export interface NodeIOWithId<
-  T extends DefinedIOType = DefinedIOType,
-  TN extends IOTypeName = IOTypeName,
-> extends NodeIO<T, TN> {
+export interface NodeIOWithId<TN extends IOTypeName = IOTypeName>
+  extends NodeIO<TN> {
   id: number;
 }
 
@@ -108,23 +138,27 @@ export type NodeIODefinition<
   editable?: boolean;
 };
 
+export type NodeIoToNodeOperationArgument<TN extends IOTypeName[]> = {
+  [P in keyof TN]: NodeOperationArgument<IOTypeMap<TN[P]>, TN[P]>;
+};
+
+export type IOTypeNamesToNodeIOWithIds<TN extends IOTypeName[]> = {
+  [P in keyof TN]: NodeIOWithId<TN[P]>;
+};
+
 export type NodeOperation<
-  T extends IOType,
-  TN extends IOTypeName,
-  OT extends DefinedIOType = DefinedIOType,
-  OTN extends IOTypeName = IOTypeName,
+  TN extends IOTypeName[] = IOTypeName[],
+  OTN extends IOTypeName[] = IOTypeName[],
 > = (
-  inputs: NodeOperationArgument<T, TN>[],
+  inputs: NodeIoToNodeOperationArgument<TN>,
 ) =>
-  | NodeOperationArgument<OT, OTN>
-  | NodeOperationArgument<OT, OTN>[]
-  | Promise<NodeOperationArgument<OT, OTN>[]>
-  | Promise<NodeOperationArgument<OT, OTN>>;
+  | NodeIoToNodeOperationArgument<OTN>
+  | Promise<NodeIoToNodeOperationArgument<OTN>>;
 
 export interface NodeWithId<
-  OperationInputType extends IOType,
-  OperationInputTypeName extends IOTypeName,
-> extends Node<OperationInputType, OperationInputTypeName> {
+  ITN extends IOTypeName[] = DefinedIOTypeName[],
+  OTN extends IOTypeName[] = DefinedIOTypeName[],
+> extends Node<ITN, OTN> {
   id: number;
 }
 

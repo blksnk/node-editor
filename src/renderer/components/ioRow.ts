@@ -15,7 +15,7 @@ import { cssClass } from '../../utils/css';
 export const createCardIoRow = (
   list: HTMLUListElement,
   io: NodeIOWithId,
-  node: NodeWithId<DefinedIOType, IOTypeName>,
+  node: NodeWithId,
   setIoValue: (value: DefinedIOType) => void,
 ) => {
   const isOutput = io.kind === 'output';
@@ -35,7 +35,7 @@ export const createCardIoRow = (
     cssSelectors.ioRow.connected,
     io.connection?.connected ?? false,
   );
-  li.classList.add(io.type);
+  li.classList.add(io.type.split('[]')[0]);
   const container = createIORowContainer(io, setIoValue);
   const indicator = createIoRowIndicator(io);
 
@@ -47,6 +47,9 @@ export const createCardIoRow = (
 const createIoRowIndicator = (io: NodeIOWithId) => {
   const indicator = element<HTMLDivElement>('div');
   indicator.classList.add(cssSelectors.ioRow.indicator);
+  if (io.multi) {
+    indicator.classList.add(cssSelectors.ioRow.multi);
+  }
   indicator.classList.toggle(
     cssSelectors.ioRow.connected,
     Boolean(io.connection?.connected),
@@ -86,17 +89,14 @@ const createIORowEditComponentIfNeeded = (
   // TODO: add case for boolean
 
   return io.type === 'number' || io.type === 'string'
-    ? createIORowInput(
-        io as NodeIOWithId<string | number, 'string' | 'number'>,
-        setIoValue,
-    )
+    ? createIORowInput(io as NodeIOWithId<'string' | 'number'>, setIoValue)
     : io.type === 'boolean'
-      ? createIORowToggle(io as NodeIOWithId<boolean, 'boolean'>, setIoValue)
+      ? createIORowToggle(io as NodeIOWithId<'boolean'>, setIoValue)
       : undefined;
 };
 
 const createIORowInput = (
-  io: NodeIOWithId<string | number, 'string' | 'number'>,
+  io: NodeIOWithId<'string' | 'number'>,
   setIoValue: (value: string | number) => void,
 ) => {
   // use generic input component
@@ -108,7 +108,7 @@ const createIORowInput = (
 };
 
 const createIORowToggle = (
-  io: NodeIOWithId<boolean, 'boolean'>,
+  io: NodeIOWithId<'boolean'>,
   setIoValue: (value: boolean) => void,
 ) => {
   const toggle = Toggle(io.value, setIoValue);
@@ -143,9 +143,6 @@ export const getIoInformation = (io: HTMLLIElement): NodeConnectionInfo => {
   }
   return { ioId, nodeId, type, connected, connection };
 };
-
-export const getNodeIoId = (nodeId: number, ioId: number, isOutput: boolean) =>
-  `node__${nodeId}__${isOutput ? 'output' : 'input'}__${ioId}`;
 
 export const updateIoRow = (
   row: HTMLLIElement,

@@ -17,6 +17,10 @@
   transform: translate(var(--x-pos), var(--y-pos));
   z-index: 1;
   font-size: var(--unit);
+
+  &.node__card__highlight {
+    outline: 1px solid var(--light-grey);
+  }
 }
 
 .node__card__root {
@@ -33,15 +37,15 @@
   color: var(--white);
   pointer-events: all;
   height: 40px;
+  max-height: 40px;
   display: flex;
   flex-direction: row;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   margin: -1px;
   margin-bottom: 0;
 
   &.node__category__value {
-
     &.node__type__number {
       --bg: var(--number);
     }
@@ -66,6 +70,18 @@
       --bg: var(--property);
     }
   }
+
+  .node__help__button {
+    opacity: 0.5;
+
+    &:focus {
+      outline: none;
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+  }
 }
 
 .node__card__title {
@@ -80,11 +96,11 @@
   padding: var(--unit) var(--unit-h);
 }
 
-.node__io, .node__io__row {
+.node__io,
+.node__io__row {
   list-style-type: none;
-  padding: 0
+  padding: 0;
 }
-
 
 .node__io__row {
   display: flex;
@@ -93,6 +109,7 @@
   gap: var(--unit-h);
   pointer-events: all;
   padding: var(--unit-h) 0;
+  height: var(--io-row-height);
 
   @include vars.type-var(--type);
 
@@ -112,7 +129,7 @@
     margin-left: var(--unit-hh);
 
     &.node__io__editable .node__io__row__container {
-      justify-content: space-between
+      justify-content: space-between;
     }
   }
 
@@ -120,14 +137,14 @@
     justify-content: flex-start;
     margin-left: var(--unit-n);
     margin-right: var(--unit-h);
-
   }
 
   &:hover .node__io__indicator:not(.node__io__connected) {
     border-width: 3px;
   }
 
-  &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input) .node__io__row__container {
+  &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input)
+    .node__io__row__container {
     background: var(--dark-grey);
 
     &:hover {
@@ -135,33 +152,39 @@
     }
   }
 
+  &.node__io__output:not(.node__io__editable) .node__io__row__container {
+    justify-content: flex-end;
+  }
 }
-
 
 .node__io__indicator {
   height: var(--unit);
   width: var(--unit);
   border: 1px solid var(--type);
-  border-radius: 50%;
+  border-radius: var(--unit-h);
   background: var(--off-black);
   z-index: 11;
 
-  &.node__io__active {
+  &.node__io__connected {
     background-color: var(--type);
-    transform: translateZ(0)
+    transform: translateZ(0);
   }
 
   &.node__io__connection__pending {
     border-width: 3px;
   }
 
+  &.node__io__multi {
+    height: var(--unit-d);
+  }
 }
 
 .node__io__name {
-  @include vars.node-io-name
+  @include vars.node-io-name;
 }
 
-.node__io__name, .node__io__indicator {
+.node__io__name,
+.node__io__indicator {
   pointer-events: none;
 }
 
@@ -194,5 +217,5 @@
 }
 
 .node__connection__root path {
-  z-index: 10
+  z-index: 10;
 }

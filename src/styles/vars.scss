@@ -2,23 +2,23 @@
   --white: white;
   --white-90: rgba(255, 255, 255, 0.87);
   --white-50: rgba(255, 255, 255, 0.5);
-  --light-grey: #C0C0C0;
+  --light-grey: #c0c0c0;
   --medium-grey: #515151;
   --dark-grey: #353535;
   --off-black: #212121;
   --off-black-50: rgba(33, 33, 33, 0.5);
   --black-90: rgba(0, 0, 0, 0.87);
   --black-50: rgba(0, 0, 0, 0.5);
-  --black: #0B0B0B;
+  --black: #0b0b0b;
   --black--pure: #000;
 
-  --number: #5CCEFF;
-  --boolean: #3C4DE9;
-  --string: #AFB203;
-  --object: #D48AF6;
+  --number: #5cceff;
+  --boolean: #3c4de9;
+  --string: #afb203;
+  --object: #d48af6;
   --any: var(--white);
-  --property: #FFAE33;
-  --array: #61BB6A;
+  --property: #ffae33;
+  --array: #61bb6a;
 
   --unit: 12px;
   --unit-h: calc(var(--unit) / 2);
@@ -26,6 +26,8 @@
   --unit-hh: calc(var(--unit) / 4);
   --unit-dd: calc(var(--unit) * 4);
   --unit-n: calc(var(--unit) * -1);
+
+  --io-row-height: 34px;
 
   --f-sans: Inter, Avenir, Helvetica, Arial, sans-serif;
   --f-mono: Fira Code, monospace;

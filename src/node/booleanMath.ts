@@ -1,12 +1,8 @@
-import {
-  NodeIODefinition,
-  NodeOperation,
-  NodeOperationArgument,
-} from './node.types';
+import { NodeIODefinition, NodeOperation } from './node.types';
 import { Node } from './node';
 
-export class BooleanMathNode extends Node<boolean, 'boolean'> {
-  constructor(operation: NodeOperation<boolean, 'boolean'>) {
+export class BooleanMathNode extends Node<['boolean', 'boolean'], ['boolean']> {
+  constructor(operation: NodeOperation<['boolean', 'boolean'], ['boolean']>) {
     const inputs: NodeIODefinition[] = [
       {
         name: 'A',
@@ -41,119 +37,140 @@ export class BooleanMathNode extends Node<boolean, 'boolean'> {
 
 export class AndBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: a.value && b.value,
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: a.value && b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'And Gate',
+      kind: 'booleanmath::and',
     });
   }
 }
 
 export class OrBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: a.value || b.value,
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: a.value || b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Or Gate',
+      kind: 'booleanmath::or',
     });
   }
 }
 
 export class NandBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: !(a.value && b.value),
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: !(a.value && b.value),
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Not And Gate',
+      kind: 'booleanmath::nand',
     });
   }
 }
 
 export class NorBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: !(a.value || b.value),
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: !(a.value || b.value),
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Not Or Gate',
+      kind: 'booleanmath::nor',
     });
   }
 }
 
 export class XOrBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: (a.value || b.value) && !(a.value && b.value),
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: (a.value || b.value) && !(a.value && b.value),
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Exclusive Or Gate',
+      kind: 'booleanmath::xor',
     });
   }
 }
 
 export class XNorBooleanMathNode extends BooleanMathNode {
   constructor() {
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       a,
       b,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Result',
-        type: 'boolean',
-        value: a.value === b.value,
-      };
+    ]) => {
+      return [
+        {
+          name: 'Result',
+          type: 'boolean',
+          value: a.value === b.value,
+        },
+      ];
     };
     super(operation);
     this.setupSelf({
       title: 'Exclusive Nor Gate',
+      kind: 'booleanmath::xnor',
     });
   }
 }
 
-export class NotBooleanMathNode extends Node<boolean, 'boolean'> {
+export class NotBooleanMathNode extends Node<
+  ['boolean', 'boolean'],
+  ['boolean']
+> {
   constructor() {
     const inputs: NodeIODefinition[] = [
       {
@@ -168,14 +185,16 @@ export class NotBooleanMathNode extends Node<boolean, 'boolean'> {
         type: 'boolean',
       },
     ];
-    const operation: NodeOperation<boolean, 'boolean'> = ([
+    const operation: NodeOperation<['boolean', 'boolean'], ['boolean']> = ([
       v,
-    ]: NodeOperationArgument<boolean, 'boolean'>[]) => {
-      return {
-        name: 'Inverse',
-        type: 'boolean',
-        value: !v.value,
-      };
+    ]) => {
+      return [
+        {
+          name: 'Inverse',
+          type: 'boolean',
+          value: !v.value,
+        },
+      ];
     };
     super({
       inputs,
@@ -186,6 +205,7 @@ export class NotBooleanMathNode extends Node<boolean, 'boolean'> {
       type: 'boolean',
       category: 'booleanMath',
       title: 'Not Gate',
+      kind: 'booleanmath::not',
     });
   }
 }

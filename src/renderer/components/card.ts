@@ -1,6 +1,5 @@
 import {
   DefinedIOType,
-  IOTypeName,
   NodeIO,
   NodeIOWithId,
   NodeWithId,
@@ -11,11 +10,11 @@ import { findById } from '../../utils/data';
 import { Runtime } from '../../runtime/runtime';
 import { cssSelectors } from './cssSelectors';
 import { element } from '../../utils/document';
+import { Icon } from './icons';
 
 export const createCard = (
-  node: NodeWithId<DefinedIOType, IOTypeName>,
+  node: NodeWithId,
   position: Vec2,
-  selectCard: () => void,
   setIoValue?: (
     ioId: number,
     value: DefinedIOType,
@@ -29,23 +28,20 @@ export const createCard = (
   card.id = cssSelectors.nodeCard.id(node.id);
   card.dataset.id = String(node.id);
 
-  // fire select event on card pointer down
-  card.addEventListener('pointerdown', selectCard);
-
   // position card
   setCardPosition(card, position);
 
   const cardHeader = createCardHeader(node);
   card.appendChild(cardHeader);
-  createCardTitle(cardHeader, node);
+  const title = createCardTitle(node);
+  const helpButton = createCardHelpButton(node);
+  cardHeader.append(title, helpButton);
   const io = createCardIO(card, node, setIoValue);
 
   return { card, cardHeader, ...io };
 };
 
-export const createCardHeader = (
-  node: NodeWithId<DefinedIOType, IOTypeName>,
-) => {
+export const createCardHeader = (node: NodeWithId) => {
   const cardHeader = element<HTMLElement>('header');
   cardHeader.classList.add(cssSelectors.nodeCard.header);
   cardHeader.classList.add(cssSelectors.nodeCard.type(node.type));
@@ -54,22 +50,31 @@ export const createCardHeader = (
   return cardHeader;
 };
 
-export const createCardTitle = (
-  header: HTMLElement,
-  node: NodeWithId<DefinedIOType, IOTypeName>,
-) => {
-  if (!node.title) return;
+export const createCardTitle = (node: NodeWithId) => {
   const title = element<HTMLHeadingElement>('h3');
 
-  title.innerText = node.title + ' ' + node.id;
+  title.innerText = node.title;
   title.classList.add(cssSelectors.nodeCard.title);
 
-  header.appendChild(title);
+  return title;
+};
+
+export const createCardHelpButton = (
+  node: NodeWithId,
+  onClick?: (id: number) => void,
+) => {
+  const button = element<HTMLButtonElement>('button');
+  const icon = Icon('help');
+  button.classList.add(cssSelectors.nodeCard.helpButton);
+  button.appendChild(icon);
+  button.addEventListener('click', () => onClick && onClick(node.id));
+
+  return button;
 };
 
 export const createCardIO = (
   card: HTMLElement,
-  node: NodeWithId<DefinedIOType, IOTypeName>,
+  node: NodeWithId,
   setIoValue?: (
     ioId: number,
     value: DefinedIOType,
@@ -134,7 +139,7 @@ export const setCardPosition = (card: HTMLElement, position: Vec2) => {
 };
 
 export const updateCardIo = (
-  rendererNode: RendererNode<DefinedIOType, IOTypeName>,
+  rendererNode: RendererNode,
   setIoValue: (
     ioId: number,
     value: DefinedIOType,
@@ -163,7 +168,7 @@ export const updateCardIo = (
 };
 
 export const updateAllCardIos = (
-  rendererNodes: RendererNode<DefinedIOType, IOTypeName>[],
+  rendererNodes: RendererNode[],
   setIOValue: Runtime['setNodeIoValue'],
 ) =>
   rendererNodes.forEach((rendererNode) =>
@@ -175,7 +180,7 @@ export const updateAllCardIos = (
   );
 
 export const setCardHighlight = (
-  rendererNode: RendererNode<DefinedIOType, IOTypeName>,
+  rendererNode: RendererNode,
   highlight: boolean,
 ) => {
   rendererNode.card.classList.toggle(

@@ -1,13 +1,13 @@
-import { IOType, IOTypeName, NodeWithId } from "../node/node.types";
+import { IOTypeName, NodeWithId } from '../node/node.types';
 
 export interface NodeConnection {
   inputNode: {
-    node: NodeWithId<IOType, IOTypeName>;
+    node: NodeWithId;
     ioId: number;
     type: IOTypeName;
   };
   outputNode: {
-    node: NodeWithId<IOType, IOTypeName>;
+    node: NodeWithId;
     ioId: number;
     type: IOTypeName;
   };
@@ -24,7 +24,7 @@ export interface NodeConnectionAttempt {
     id: number;
     ioId: number;
     type: IOTypeName;
-  }
+  };
 }
 
 export interface NodeConnectionBreak {

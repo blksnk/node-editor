@@ -6,13 +6,7 @@ import {
 } from './renderer.types';
 import { findById } from '../utils/data';
 import { vecDelta } from '../utils/vectors';
-import {
-  DefinedIOType,
-  IOType,
-  IOTypeName,
-  IOTypeNames,
-  NodeWithId,
-} from '../node/node.types';
+import { IOTypeName, IOTypeNames, NodeWithId } from '../node/node.types';
 
 import { cssVar } from '../utils/css';
 import { NodeConnection } from '../runtime/runtime.types';
@@ -72,15 +66,19 @@ const createAllConnectionGradients = (defs: SVGDefsElement) => {
   defs.append(...gradients);
 };
 
-export const resizeSvg = (svg: SVGSVGElement) => {
-  svg.style.width = window.innerWidth + 'px';
-  svg.style.height = window.innerHeight + 'px';
-  svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+export const resizeSvg = (
+  svg: SVGSVGElement,
+  size: { width: number; height: number } = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  },
+) => {
+  svg.style.width = size.width + 'px';
+  svg.style.height = size.height + 'px';
+  svg.setAttribute('viewBox', `0 0 ${size.width} ${size.height}`);
 };
 
-export const getUniqueConnections = (
-  nodes: NodeWithId<IOType, IOTypeName>[],
-): NodeConnection[] => {
+export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
   return nodes
     .map((node) =>
       node.inputs
@@ -124,7 +122,7 @@ export const getUniqueConnections = (
 
 export const assignIoPositions = (
   connections: NodeConnection[],
-  rendererNodes: RendererNode<DefinedIOType, IOTypeName>[],
+  rendererNodes: RendererNode[],
 ): RendererConnection[] => {
   return connections
     .map((c) => {

@@ -1,29 +1,32 @@
 import {
   DefinedIOType,
-  IOType,
+  DefinedIOTypeName,
   IOTypeName,
+  IOTypeNamesToNodeIOWithIds,
   NodeCategory,
   NodeIO,
   NodeIODefinition,
+  NodeIoToNodeOperationArgument,
   NodeIOWithId,
   NodeOperation,
-  NodeOperationArgument,
   NodeTypeName,
   NodeWithId,
 } from './node.types';
 import { isMultiIO } from '../utils/data';
+import { AnyGenericNodeKey, AnyNodeKey } from './nodeIndex';
 
 export class Node<
-  OperationInputType extends IOType,
-  OperationInputTypeName extends IOTypeName,
+  InputTypeNames extends IOTypeName[] = DefinedIOTypeName[],
+  OutputTypeNames extends IOTypeName[] = DefinedIOTypeName[],
 > {
-  inputs: NodeIOWithId[];
-  outputs: NodeIOWithId[];
-  operation: NodeOperation<OperationInputType, OperationInputTypeName>;
+  inputs: IOTypeNamesToNodeIOWithIds<InputTypeNames>;
+  outputs: IOTypeNamesToNodeIOWithIds<OutputTypeNames>;
+  operation: NodeOperation<InputTypeNames, InputTypeNames>;
   id?: number;
   title = 'Node';
   type: NodeTypeName = 'base';
   category: NodeCategory = 'base';
+  kind: AnyNodeKey | AnyGenericNodeKey = 'generic::node';
 
   constructor({
     inputs,
@@ -32,7 +35,7 @@ export class Node<
   }: {
     inputs: NodeIODefinition[];
     outputs: NodeIODefinition[];
-    operation: NodeOperation<OperationInputType, OperationInputTypeName>;
+    operation: NodeOperation<InputTypeNames, OutputTypeNames>;
   }) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -55,7 +58,7 @@ export class Node<
       id: i,
       value: v.value,
       kind: 'output',
-      node: this as Node<OperationInputType, OperationInputTypeName>,
+      node: this as Node<InputTypeNames, OutputTypeNames>,
       editable: v.editable ?? false,
       multi: isMultiIO(v),
     }));
@@ -98,10 +101,7 @@ export class Node<
 
     // run node operation
     const results = await this.operation(
-      inputs as unknown as NodeOperationArgument<
-        OperationInputType,
-        OperationInputTypeName
-      >[],
+      inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
     );
     // update node's outputted values
     const r = Array.isArray(results) ? results : [results];
@@ -114,9 +114,9 @@ export class Node<
     return r;
   }
 
-  assignId(id: number): NodeWithId<OperationInputType, OperationInputTypeName> {
+  assignId(id: number): NodeWithId<InputTypeNames, InputTypeNames> {
     this.id = id;
-    return this as NodeWithId<OperationInputType, OperationInputTypeName>;
+    return this as NodeWithId<InputTypeNames, InputTypeNames>;
   }
 
   getOutput(query: string | number) {
@@ -144,7 +144,7 @@ export class Node<
   }
 
   connectInput(
-    sourceNode: NodeWithId<IOType, IOTypeName>,
+    sourceNode: NodeWithId,
     sourceOutputId: number,
     targetInputQuery: string | number,
   ) {
@@ -161,7 +161,7 @@ export class Node<
   }
 
   connectOutput(
-    targetNode: NodeWithId<IOType, IOTypeName>,
+    targetNode: NodeWithId,
     targetInputId: number,
     sourceOutputQuery: string | number,
   ) {
@@ -187,10 +187,12 @@ export class Node<
     type?: NodeTypeName;
     category?: NodeCategory;
     title?: string;
+    kind?: AnyNodeKey;
   }) {
     this.type = options.type ?? this.type;
     this.category = options.category ?? this.category;
     this.title = options.title ?? this.title;
+    this.kind = options.kind ?? this.kind;
   }
 
   setIoValue(ioId: number, value: DefinedIOType, kind: NodeIO['kind']) {

@@ -1,24 +1,22 @@
 import { Node } from './node';
-import { DefinedIOType, IOTypeName } from './node.types';
+import {
+  DefinedIOType,
+  IOTypeName,
+  NodeIoToNodeOperationArgument,
+} from './node.types';
 import { capitalize } from '../utils/strings';
-import { defaultValues } from './defaults';
+import { defaultValues, defineNodeIO } from './defaults';
 
 export class ValueNode<
   T extends DefinedIOType,
   TN extends IOTypeName,
-> extends Node<DefinedIOType, IOTypeName> {
+> extends Node<[T], [TN]> {
   constructor(defaultValue: T, type: TN) {
     super({
       inputs: [],
-      outputs: [
-        {
-          name: 'Value',
-          type,
-          value: defaultValue,
-          editable: true,
-        },
-      ],
-      operation: () => this.outputs[0],
+      outputs: [defineNodeIO(capitalize(type), type, true, defaultValue)],
+      operation: (): NodeIoToNodeOperationArgument<[TN]> =>
+        this.outputs as unknown as NodeIoToNodeOperationArgument<[TN]>,
     });
     this.setupSelf({
       category: 'value',
@@ -29,18 +27,20 @@ export class ValueNode<
 
 export class NumberValueNode extends ValueNode<number, 'number'> {
   constructor() {
-    super(defaultValues.number, 'number');
+    super(defaultValues.number(), 'number');
     this.setupSelf({
       type: 'number',
+      kind: 'value::number',
     });
   }
 }
 
 export class StringValueNode extends ValueNode<string, 'string'> {
   constructor() {
-    super(defaultValues.string, 'string');
+    super(defaultValues.string(), 'string');
     this.setupSelf({
       type: 'string',
+      kind: 'value::string',
     });
   }
 }
@@ -50,18 +50,20 @@ export class ObjectValueNode extends ValueNode<
   'object'
 > {
   constructor() {
-    super(defaultValues.object, 'object');
+    super(defaultValues.object(), 'object');
     this.setupSelf({
       type: 'object',
+      kind: 'value::object',
     });
   }
 }
 
 export class BooleanValueNode extends ValueNode<boolean, 'boolean'> {
   constructor() {
-    super(defaultValues.boolean, 'boolean');
+    super(defaultValues.boolean(), 'boolean');
     this.setupSelf({
       type: 'boolean',
+      kind: 'value::boolean',
     });
   }
 }

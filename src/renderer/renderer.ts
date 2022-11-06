@@ -7,7 +7,6 @@ import {
 } from './renderer.types';
 import {
   DefinedIOType,
-  IOTypeName,
   NodeConnectionInfo,
   NodeIO,
   NodeWithId,
@@ -27,6 +26,7 @@ import { NodeConnection } from '../runtime/runtime.types';
 import { findById } from '../utils/data';
 import {
   createCard,
+  setCardHighlight,
   setCardPosition,
   updateAllCardIos,
 } from './components/card';
@@ -39,7 +39,7 @@ export class Renderer {
   root: HTMLDivElement;
   target: RendererOptions['target'];
   connectionRoot: SVGSVGElement;
-  nodeCards: RendererNode<DefinedIOType, IOTypeName>[] = [];
+  nodeCards: RendererNode[] = [];
   nodeConnections: RendererConnection[] = [];
   runtime: Runtime;
   keyboard: KeyboardHandler;
@@ -47,13 +47,13 @@ export class Renderer {
   mousePos: Vec2 = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   mouseDown = false;
   cardMoving = false;
+  hasMoved = false;
   pendingConnection: PendingRendererConnection = {
     inputNode: undefined,
     outputNode: undefined,
     active: false,
   };
-  movingCardIds: Set<number> = new Set<number>();
-  selectedNodeId: number | undefined = undefined;
+  selectedCardIds: Set<number> = new Set<number>();
 
   constructor(options: RendererOptions) {
     this.target = options.target;
@@ -65,20 +65,14 @@ export class Renderer {
     this.initGlobalEvents();
   }
 
-  get movingNodeCards(): RendererNode<DefinedIOType, IOTypeName>[] {
-    return Array.from(this.movingCardIds)
+  private get movingNodeCards(): RendererNode[] {
+    return Array.from(this.selectedCardIds)
       .map((id) => this.findNodeCard(id))
-      .filter((card) => !!card) as RendererNode<DefinedIOType, IOTypeName>[];
+      .filter((card) => !!card) as RendererNode[];
   }
 
-  attachRoot() {
-    this.root.classList.add('node__renderer__root');
-    this.target.appendChild(this.root);
-    this.root.appendChild(this.connectionRoot);
-  }
-
-  attachNode(
-    node: NodeWithId<DefinedIOType, IOTypeName>,
+  public attachNode(
+    node: NodeWithId,
     position: Vec2 = {
       x: window.innerWidth / 2,
       y: window.innerHeight / 3,
@@ -88,7 +82,6 @@ export class Renderer {
     const { card, cardHeader, inputs, outputs } = createCard(
       node,
       position,
-      () => this.selectCard(node.id),
       (ioId: number, value: DefinedIOType, kind: NodeIO['kind']) =>
         this.runtime.setNodeIoValue(node.id, ioId, value, kind),
     );
@@ -109,9 +102,75 @@ export class Renderer {
     this.runtime.updateConnections();
   }
 
-  initCardEvents({ io, header, id }: RendererNode<DefinedIOType, IOTypeName>) {
+  public detachNode(id: number) {
+    // get node
+    const node = this.findNodeCard(id);
+    if (node === undefined) return;
+    // delete existing connections
+
+    // remove node card from dom
+    node.card.remove();
+    // and from internal array
+    this.nodeCards.splice(this.nodeCards.indexOf(node), 1);
+  }
+
+  public updateConnections(connections: NodeConnection[]) {
+    this.nodeConnections = assignIoPositions(connections, this.nodeCards);
+    this.updateCardIos();
+    renderConnections(this.nodeConnections, this.connectionRoot);
+  }
+
+  public resetSelectedCards() {
+    this.selectedCardIds.clear();
+  }
+
+  public highlightSelectedCards() {
+    // highlight selected cards, not others
+    this.nodeCards.forEach(({ id }) => {
+      this.setCardHighlight(id, this.selectedCardIds.has(id));
+    });
+  }
+
+  public updateCardIos() {
+    updateAllCardIos(
+      this.nodeCards,
+      this.runtime.setNodeIoValue.bind(this.runtime),
+    );
+  }
+
+  private onCardDown(nodeId: number) {
+    console.log(nodeId);
+    if (!this.selectedCardIds.has(nodeId) && !this.keyboard.shift) {
+      this.resetSelectedCards();
+    }
+    this.selectedCardIds.add(nodeId);
+    this.highlightSelectedCards();
+  }
+
+  private onCardUp(nodeId: number) {
+    console.log(this.hasMoved);
+    if (
+      this.selectedCardIds.has(nodeId) &&
+      !this.hasMoved &&
+      !this.keyboard.shift
+    ) {
+      this.resetSelectedCards();
+      this.selectedCardIds.add(nodeId);
+    }
+    this.highlightSelectedCards();
+  }
+
+  private attachRoot() {
+    this.root.classList.add('node__renderer__root');
+    this.target.appendChild(this.root);
+    this.root.appendChild(this.connectionRoot);
+  }
+
+  private initCardEvents({ io, header, card, id }: RendererNode) {
     const eventOptions = { passive: false };
-    header.addEventListener('pointerdown', (e) => this.onCardHeaderDown(e, id));
+    card.addEventListener('pointerdown', () => this.onCardDown(id));
+    card.addEventListener('pointerup', () => this.onCardUp(id));
+    header.addEventListener('pointerdown', (e) => this.onCardHeaderDown(e));
     io.inputs.forEach((element) => {
       element.addEventListener(
         'pointerdown',
@@ -139,17 +198,17 @@ export class Renderer {
     });
   }
 
-  initGlobalEvents() {
+  private initGlobalEvents() {
     window.addEventListener('pointerup', this.onGlobalUp.bind(this));
     window.addEventListener('pointermove', this.onGlobalMove.bind(this));
     window.addEventListener('resize', this.onWindowResize.bind(this));
   }
 
-  findNodeCard(query: number) {
+  private findNodeCard(query: number) {
     return findById(this.nodeCards, query);
   }
 
-  findConnection(
+  private findConnection(
     inputNodeId: number,
     inputIoId: number,
     outputNodeId: number,
@@ -164,32 +223,7 @@ export class Renderer {
     );
   }
 
-  detachNode(id: number) {
-    // get node
-    const node = this.findNodeCard(id);
-    if (node === undefined) return;
-    // delete existing connections
-
-    // remove node card from dom
-    node.card.remove();
-    // and from internal array
-    this.nodeCards.splice(this.nodeCards.indexOf(node), 1);
-  }
-
-  updateConnections(connections: NodeConnection[]) {
-    this.nodeConnections = assignIoPositions(connections, this.nodeCards);
-    this.updateCardIos();
-    renderConnections(this.nodeConnections, this.connectionRoot);
-  }
-
-  updateCardIos() {
-    updateAllCardIos(
-      this.nodeCards,
-      this.runtime.setNodeIoValue.bind(this.runtime),
-    );
-  }
-
-  onInputDown(e: PointerEvent, el: HTMLLIElement) {
+  private onInputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
     const pos = clickPos(e);
     this.mouseDown = true;
@@ -207,7 +241,7 @@ export class Renderer {
     this.pendingConnection.active = true;
   }
 
-  disconnectNodes(info: NodeConnectionInfo) {
+  private disconnectNodes(info: NodeConnectionInfo) {
     if (
       info.connected &&
       typeof info.connection?.id === 'number' &&
@@ -257,7 +291,7 @@ export class Renderer {
     }
   }
 
-  onInputUp(e: PointerEvent, el: HTMLLIElement) {
+  private onInputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
     this.mousePos = clickPos(e);
     const info = getIoInformation(el);
@@ -268,7 +302,7 @@ export class Renderer {
     }
   }
 
-  onOutputDown(e: PointerEvent, el: HTMLLIElement) {
+  private onOutputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
     const pos = clickPos(e);
     this.mouseDown = true;
@@ -279,7 +313,7 @@ export class Renderer {
     this.pendingConnection.active = true;
   }
 
-  setPendingConnectionIo(
+  private setPendingConnectionIo(
     el: HTMLLIElement,
     info: Pick<ReturnType<typeof getIoInformation>, 'nodeId' | 'ioId' | 'type'>,
     kind: 'inputNode' | 'outputNode',
@@ -292,7 +326,7 @@ export class Renderer {
     };
   }
 
-  onOutputUp(e: PointerEvent, el: HTMLLIElement) {
+  private onOutputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
     this.mousePos = clickPos(e);
     console.log('o up');
@@ -304,7 +338,7 @@ export class Renderer {
     }
   }
 
-  attemptConnection() {
+  private attemptConnection() {
     // check if pending connection is between same types before committing to connection
     if (
       this.pendingConnection.outputNode !== undefined &&
@@ -319,27 +353,29 @@ export class Renderer {
     this.resetPendingConnection();
   }
 
-  resetPendingConnection() {
+  private resetPendingConnection() {
     this.pendingConnection.active = false;
     this.pendingConnection.inputNode = undefined;
     this.pendingConnection.outputNode = undefined;
     clearPendingConnection(this.connectionRoot);
   }
 
-  onGlobalUp(e: PointerEvent) {
+  private onGlobalUp(e: PointerEvent) {
     this.mouseDown = false;
     this.cardMoving = false;
+    this.hasMoved = false;
     this.mousePos = clickPos(e);
     this.resetPendingConnection();
   }
 
-  onGlobalMove(e: PointerEvent) {
+  private onGlobalMove(e: PointerEvent) {
     const lastMousePos = { ...this.mousePos };
     this.mousePos = clickPos(e);
     const delta = vecDelta(this.mousePos, lastMousePos);
     // handle card move
-    if (this.movingCardIds.size > 0 && this.mouseDown && this.cardMoving) {
+    if (this.selectedCardIds.size > 0 && this.mouseDown && this.cardMoving) {
       if (this.movingNodeCards.length === 0) return;
+      this.hasMoved = true;
       this.movingNodeCards.forEach((card) => {
         this.moveNodeCard(card, delta);
       });
@@ -362,31 +398,27 @@ export class Renderer {
     }
   }
 
-  moveNodeCard(nodeCard: RendererNode<DefinedIOType, IOTypeName>, delta: Vec2) {
+  private moveNodeCard(nodeCard: RendererNode, delta: Vec2) {
     nodeCard.position.x += delta.x;
     nodeCard.position.y += delta.y;
     setCardPosition(nodeCard.card, nodeCard.position);
     this.runtime.updateConnections();
   }
 
-  onCardHeaderDown(e: PointerEvent, nodeId: number) {
+  private onCardHeaderDown(e: PointerEvent) {
     const pos = clickPos(e);
     this.mouseDown = true;
     this.cardMoving = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
-    // set current node card as only one moving of user is not pressing shift
-    if (!this.keyboard.shift) {
-      this.movingCardIds.clear();
-    }
-    this.movingCardIds.add(nodeId);
   }
 
-  selectCard(id: number) {
-    this.selectedNodeId = id;
+  private setCardHighlight(id: number, highlight: boolean) {
+    const nodeCard = this.findNodeCard(id);
+    nodeCard && setCardHighlight(nodeCard, highlight);
   }
 
-  onWindowResize() {
+  private onWindowResize() {
     resizeSvg(this.connectionRoot);
   }
 }

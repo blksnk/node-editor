@@ -1,4 +1,4 @@
-import { DefinedIOType, IOTypeName, NodeWithId } from '../node/node.types';
+import { DefinedIOTypeName, IOTypeName, NodeWithId } from '../node/node.types';
 import { Runtime } from '../runtime/runtime';
 import { KeyboardHandler } from '../keyboard/keyboard';
 
@@ -13,8 +13,11 @@ export interface Vec2 {
   y: number;
 }
 
-export interface RendererNode<T extends DefinedIOType, TN extends IOTypeName> {
-  node: NodeWithId<T, TN>;
+export interface RendererNode<
+  ITN extends IOTypeName[] = DefinedIOTypeName[],
+  OTN extends IOTypeName[] = DefinedIOTypeName[],
+> {
+  node: NodeWithId<ITN, OTN>;
   card: HTMLElement;
   io: {
     inputs: HTMLLIElement[];
