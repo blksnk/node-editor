@@ -121,13 +121,14 @@ export const storeIoInformation = (li: HTMLLIElement, io: NodeIOWithId) => {
   li.dataset.nodeId = String(io.node.id);
   li.dataset.type = io.type;
   li.dataset.connected = String(io.connection?.connected ?? false);
-  li.dataset.connection =
-    io.connection?.connected && io.connection !== undefined
-      ? JSON.stringify({
-        id: io.connection.node.id,
-        ioId: io.connection.ioId,
-      })
-      : undefined;
+  li.dataset.connections = io.connection.connected
+    ? JSON.stringify(
+      io.connection.connections.map((c) => ({
+        id: c.node.id,
+        ioId: c.ioId,
+      })),
+    )
+    : undefined;
 };
 
 export const getIoInformation = (io: HTMLLIElement): NodeConnectionInfo => {
@@ -135,13 +136,13 @@ export const getIoInformation = (io: HTMLLIElement): NodeConnectionInfo => {
   const nodeId = parseInt(io.dataset.nodeId as string);
   const type = io.dataset.type as IOTypeName;
   const connected = io.dataset.connected === 'true';
-  let connection: NodeConnectionIds | undefined;
+  let connections: NodeConnectionIds | undefined;
   if (connected) {
-    connection = JSON.parse(
-      io.dataset.connection as string,
+    connections = JSON.parse(
+      io.dataset.connections as string,
     ) as NodeConnectionIds;
   }
-  return { ioId, nodeId, type, connected, connection };
+  return { ioId, nodeId, type, connected, connections };
 };
 
 export const updateIoRow = (

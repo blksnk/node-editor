@@ -1,5 +1,10 @@
 import { Node } from '../node/node';
-import { DefinedIOType, NodeIO, NodeWithId } from '../node/node.types';
+import {
+  DefinedIOType,
+  IOArrayTypeNames,
+  NodeIO,
+  NodeWithId,
+} from '../node/node.types';
 import { Renderer } from '../renderer/renderer';
 import { AnyNodeKey, NodeIndex } from '../node/nodeIndex';
 import {
@@ -8,7 +13,7 @@ import {
   NodeConnectionBreak,
 } from './runtime.types';
 import { getUniqueConnections } from '../renderer/connection';
-import { findById } from '../utils/data';
+import { findById, getSingleType } from '../utils/data';
 import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
 
@@ -44,6 +49,16 @@ export class Runtime {
   createNode(k: AnyNodeKey, position?: Vec2) {
     const node = new NodeIndex[k]();
     this.registerNode(node as unknown as Node, position);
+  }
+
+  deleteNode(id: number) {
+    // get node
+    const node = this.getNode(id);
+    if (node === undefined) return;
+    // detach from renderer
+    this.renderer.detachNode(id);
+    // remove node from internal array
+    this.nodes.splice(this.nodes.indexOf(node), 1);
   }
 
   getNode(query: number) {
@@ -102,19 +117,29 @@ export class Runtime {
     const outputNode = findById(this.nodes, connection.outputNode.id);
     if (!inputNode || !outputNode) return;
     console.log(inputNode, outputNode, connection);
-    inputNode.disconnectIo(connection.inputNode.ioId, 'input');
-    outputNode.disconnectIo(connection.outputNode.ioId, 'output');
+    inputNode.disconnectIo(
+      connection.inputNode.ioId,
+      connection.outputNode,
+      'input',
+    );
+    outputNode.disconnectIo(
+      connection.outputNode.ioId,
+      connection.inputNode,
+      'output',
+    );
     this.updateConnections();
   }
 
   checkConnectionAttempt(candidate: NodeConnectionAttempt): boolean {
-    const typeValid = candidate.inputNode.type === candidate.outputNode.type;
+    const singleConnectingToMulti =
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      IOArrayTypeNames.includes(candidate.inputNode.type) &&
+      getSingleType(candidate.inputNode.type) === candidate.outputNode.type;
+    const typeValid =
+      candidate.inputNode.type === candidate.outputNode.type ||
+      singleConnectingToMulti;
     const notSameNode = candidate.inputNode.id !== candidate.outputNode.id;
-    console.log({
-      candidate,
-      typeValid,
-      notSameNode,
-    });
     return typeValid && notSameNode;
   }
 

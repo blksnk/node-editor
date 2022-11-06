@@ -103,10 +103,12 @@ export interface NodeIO<TN extends IOTypeName = IOTypeName> {
   name: string;
   type: TN;
   value: IOTypeMap<TN>;
-  connection?: {
+  connection: {
     connected: boolean;
-    node: Node;
-    ioId: number;
+    connections: {
+      node: Node;
+      ioId: number;
+    }[];
   };
   kind: 'input' | 'output';
   editable: boolean;
@@ -162,15 +164,15 @@ export interface NodeWithId<
   id: number;
 }
 
-export interface NodeConnectionIds {
+export type NodeConnectionIds = {
   id: number;
   ioId: number;
-}
+}[];
 
 export interface NodeConnectionInfo {
   ioId: number;
   connected: boolean;
-  connection: NodeConnectionIds | undefined;
+  connections: NodeConnectionIds | undefined;
   type: IOTypeName;
   nodeId: number;
 }

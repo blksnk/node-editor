@@ -23,7 +23,7 @@ import {
   resizeSvg,
 } from './connection';
 import { NodeConnection } from '../runtime/runtime.types';
-import { findById } from '../utils/data';
+import { findById, isDefined } from '../utils/data';
 import {
   createCard,
   setCardHighlight,
@@ -242,26 +242,22 @@ export class Renderer {
   }
 
   private disconnectNodes(info: NodeConnectionInfo) {
-    if (
-      info.connected &&
-      typeof info.connection?.id === 'number' &&
-      typeof info.connection?.ioId === 'number'
-    ) {
+    if (info.connected && isDefined(info.connections)) {
       // remove connection and start pending connection with previously connected input
       breakConnection: {
         // get actual connection, connected node, output data and element
-        const outputNodeCard = this.findNodeCard(info.connection.id);
+        const outputNodeCard = this.findNodeCard(info.connections[0].id);
         if (!outputNodeCard) break breakConnection;
 
         const connectedOutput = findById(
           outputNodeCard.node.outputs,
-          info.connection.ioId,
+          info.connections[0].ioId,
         );
         const connectedOutputElement = findById(
           outputNodeCard.io.outputs,
           cssSelectors.ioRow.id(
             outputNodeCard.node.id,
-            info.connection.ioId,
+            info.connections[0].ioId,
             true,
           ),
         );
@@ -270,8 +266,8 @@ export class Renderer {
         const connection = this.findConnection(
           info.nodeId,
           info.ioId,
-          info.connection.id,
-          info.connection.ioId,
+          info.connections[0].id,
+          info.connections[0].ioId,
         );
         if (!connection) break breakConnection;
         // ask runtime to break connection
@@ -282,7 +278,7 @@ export class Renderer {
           connectedOutputElement,
           {
             nodeId: outputNodeCard.node.id,
-            ioId: info.connection.ioId,
+            ioId: info.connections[0].ioId,
             type: connectedOutput.type,
           },
           'outputNode',

@@ -12,7 +12,7 @@ import {
   NodeTypeName,
   NodeWithId,
 } from './node.types';
-import { isMultiIO } from '../utils/data';
+import { isDefined, isMultiIO } from '../utils/data';
 import { AnyGenericNodeKey, AnyNodeKey } from './nodeIndex';
 
 export class Node<
@@ -50,6 +50,10 @@ export class Node<
       node: this,
       editable: v.editable ?? false,
       multi: isMultiIO(v),
+      connection: {
+        connected: false,
+        connections: [],
+      },
     }));
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -61,6 +65,10 @@ export class Node<
       node: this as Node<InputTypeNames, OutputTypeNames>,
       editable: v.editable ?? false,
       multi: isMultiIO(v),
+      connection: {
+        connected: false,
+        connections: [],
+      },
     }));
   }
 
@@ -68,27 +76,44 @@ export class Node<
     return await Promise.all(
       this.inputs.map(async (input) => {
         // check if input is connected.
-        // prioritize connection value over base (default) input value
-        if (input.connection?.connected) {
-          // fetch current connected output value
-          const connectedOutput = input.connection.node.getOutput(
-            input.connection.ioId,
-          );
-          let outputValue = connectedOutput?.value ?? undefined;
-          // execute node if output value is undefined and override var
-          if (outputValue === undefined) {
-            await input.connection.node.execute();
-            outputValue =
-              input.connection.node.getOutput(input.connection.ioId)?.value ??
-              undefined;
-          }
-          // return input with value from connected output
-          return {
-            ...input,
-            value: outputValue,
-          };
-        }
-        return input;
+        // return input with default value if not
+        if (!input.connection.connections) return input;
+        // fetch current connected output value
+        const connectedOutputValues = await Promise.all(
+          input.connection.connections.map(async ({ node, ioId }) => {
+            // always execute node before getting output value
+            await node.execute();
+            const output: NodeIOWithId | undefined = node.getOutput(ioId);
+            if (!output) return undefined;
+            return {
+              value: output.value ?? undefined,
+              type: output.type,
+            };
+          }),
+        );
+        // filter out unusable connection values
+        const filteredOutputValues = connectedOutputValues.filter((output) =>
+          isDefined(output),
+        );
+
+        // normalize response to fit with input type (array or not)
+        const inputValue =
+          filteredOutputValues.length === 1
+            ? filteredOutputValues[0]
+            : filteredOutputValues;
+        // let outputValue = connectedOutput?.value ?? undefined;
+        // // execute node if output value is undefined and override var
+        // if (outputValue === undefined) {
+        //   await input.connection.node.execute();
+        //   outputValue =
+        //     input.connection.node.getOutput(input.connection.ioId)?.value ??
+        //     undefined;
+        // }
+        // return input with value from connected output
+        return {
+          ...input,
+          value: inputValue,
+        };
       }),
     );
   }
@@ -151,11 +176,21 @@ export class Node<
     const targetInput = this.getInput(targetInputQuery);
     const sourceNodeOutput = sourceNode.getOutput(sourceOutputId);
     if (!targetInput || !sourceNodeOutput) return;
-    targetInput.connection = {
-      connected: true,
-      node: sourceNode,
-      ioId: sourceOutputId,
-    };
+
+    targetInput.connection.connected = true;
+    if (!targetInput.multi) {
+      targetInput.connection.connections = [
+        {
+          node: sourceNode,
+          ioId: sourceOutputId,
+        },
+      ];
+    } else {
+      targetInput.connection.connections.push({
+        node: sourceNode,
+        ioId: sourceOutputId,
+      });
+    }
     this.onOwnIOConnection(targetInput, sourceNodeOutput);
     sourceNode.onOwnIOConnection(sourceNodeOutput, targetInput);
   }
@@ -168,19 +203,29 @@ export class Node<
     const sourceOutput = this.getOutput(sourceOutputQuery);
     const targetInput = targetNode.getInput(targetInputId);
     if (!sourceOutput || !targetInput) return;
-    sourceOutput.connection = {
-      connected: true,
+    sourceOutput.connection.connected = true;
+    sourceOutput.connection.connections.push({
       node: targetNode,
       ioId: targetInputId,
-    };
+    });
     this.onOwnIOConnection(sourceOutput, targetInput);
+    targetNode.onOwnIOConnection(targetInput, sourceOutput);
   }
 
-  disconnectIo(query: string | number, kind: 'input' | 'output') {
-    console.log(query, kind);
-    const targetIo = this.getIo(query, kind);
+  disconnectIo(
+    ownId: number,
+    connectionInfo: { id: number; ioId: number },
+    kind: 'input' | 'output',
+  ) {
+    const targetIo = this.getIo(ownId, kind);
     if (!targetIo) return;
-    targetIo.connection = undefined;
+    const connectionIndex = targetIo.connection.connections.findIndex(
+      (c) => c.node.id === connectionInfo.id && c.ioId === connectionInfo.ioId,
+    );
+    if (connectionIndex >= 0) {
+      targetIo.connection.connections.splice(connectionIndex, 1);
+    }
+    targetIo.connection.connected = targetIo.connection.connections.length > 0;
   }
 
   setupSelf(options: {

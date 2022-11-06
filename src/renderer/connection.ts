@@ -4,9 +4,14 @@ import {
   RendererNode,
   Vec2,
 } from './renderer.types';
-import { findById } from '../utils/data';
+import { findById, getSingleType, isDefined } from '../utils/data';
 import { vecDelta } from '../utils/vectors';
-import { IOTypeName, IOTypeNames, NodeWithId } from '../node/node.types';
+import {
+  DefinedIOTypeName,
+  IOTypeName,
+  IOTypeNames,
+  NodeWithId,
+} from '../node/node.types';
 
 import { cssVar } from '../utils/css';
 import { NodeConnection } from '../runtime/runtime.types';
@@ -79,45 +84,53 @@ export const resizeSvg = (
 };
 
 export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
-  return nodes
+  const connections = nodes
     .map((node) =>
-      node.inputs
-        .filter(
-          ({ connection }) =>
-            connection !== undefined && !!connection && !!connection?.node,
-        )
-        .map((input) => {
-          const outputNode = findById(
-            nodes,
-            input.connection?.node.id as number,
-          );
-          if (!outputNode) return undefined;
-
-          const outputNodeType = findById(
-            outputNode.outputs,
-            input.connection?.ioId as number,
-          )?.type;
-
+      node.inputs.map((input) => {
+        const outputNodeConnections = input.connection.connections.map((c) => {
+          const node = findById(nodes, c.node.id as number);
+          if (node === undefined) return undefined;
+          const outputNode = findById(node.outputs, c.ioId);
+          if (outputNode === undefined) return undefined;
           return {
-            inputNode: {
-              node,
-              ioId: input.id,
-              type: input.type,
-            },
-            outputNode: {
-              node: input.connection?.node,
-              ioId: input.connection?.ioId,
-              type: outputNodeType ?? 'any',
-            },
+            ioId: c.ioId,
+            node,
+            type: outputNode.type,
           };
-        }),
+        });
+        const filteredOutputNodeConnections = outputNodeConnections.filter(
+          (c) => isDefined(c),
+        ) as {
+          ioId: number;
+          node: NodeWithId;
+          type: DefinedIOTypeName;
+        }[];
+        if (filteredOutputNodeConnections.length === 0) return undefined;
+
+        // const outputNodeType = findById(
+        //   outputNode.outputs,
+        //   input.connection?.ioId as number,
+        // )?.type;
+        console.log(filteredOutputNodeConnections);
+
+        return filteredOutputNodeConnections.map((c) => ({
+          inputNode: {
+            node,
+            ioId: input.id,
+            type: input.type,
+          },
+          outputNode: c,
+        }));
+      }),
     )
-    .flat(1)
+    .flat(2)
     .filter((connection) => connection !== undefined)
     .map((c, index) => ({
       ...c,
       id: index,
     })) as NodeConnection[];
+  console.log(connections);
+  return connections;
 };
 
 export const assignIoPositions = (
@@ -211,7 +224,10 @@ export const svgBezierCommand =
     };
 
 export const getConnectionGradientId = (connection: RendererConnection) => {
-  return gradientId(connection.outputNode.type, connection.inputNode.type);
+  return gradientId(
+    getSingleType(connection.outputNode.type),
+    getSingleType(connection.inputNode.type),
+  );
 };
 
 export const renderConnections = (
