@@ -62,14 +62,6 @@ export class RuntimeOutputNode extends Node<['string', 'any'], []> {
     super.executeConnectedNodes();
   }
 
-  // override async onOwnIOConnection(
-  //   _ownIO: NodeIOWithId,
-  //   foreignIO: NodeIOWithId,
-  // ): Promise<void> {
-  //   await this.execute();
-  //   super.onOwnIOConnection(_ownIO, foreignIO);
-  // }
-
   override async onOwnInputDisconnection(_ownIO: NodeIOWithId): Promise<void> {
     super.onOwnInputDisconnection(_ownIO);
     if (_ownIO.name === 'Value') {
