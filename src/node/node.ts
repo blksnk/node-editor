@@ -74,7 +74,144 @@ export class Node<
     }));
   }
 
-  async fetchInputValues() {
+  public async execute() {
+    // fetch all needed inputs from connected nodes
+    console.log('execute', this.title);
+    const inputs = await this.fetchInputValues();
+    // return undefined if some input values are
+    if (inputs.some(({ value }) => isUndefined(value))) return undefined;
+
+    // run node operation
+    const results = await this.operation(
+      inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
+    );
+
+    // update node's outputted values
+    const r = Array.isArray(results) ? results : [results];
+    r.forEach((result) => {
+      const index = this.outputs.findIndex(({ name }) => name === result.name);
+      if (index < 0) return;
+      this.outputs[index].value = result.value;
+    });
+    // return results for external consumption
+    return r;
+  }
+
+  public assignId(
+    id: number,
+    runtime: Runtime,
+  ): NodeWithId<InputTypeNames, InputTypeNames> {
+    this.id = id;
+    this.runtime = runtime;
+    return this as NodeWithId<InputTypeNames, InputTypeNames>;
+  }
+
+  public getIo(query: string | number, kind: NodeIO['kind']) {
+    return (kind === 'input' ? this.getInput : this.getOutput).bind(this)(
+      query,
+    );
+  }
+
+  public connectInput(
+    sourceNode: NodeWithId,
+    sourceOutputId: number,
+    targetInputQuery: string | number,
+  ) {
+    const targetInput = this.getInput(targetInputQuery);
+    const sourceNodeOutput = sourceNode.getOutput(sourceOutputId);
+    if (!targetInput || !sourceNodeOutput) return;
+    targetInput.connection.connected = true;
+    if (!targetInput.multi) {
+      // remove connected status from previously connected output
+      const previousConnection = targetInput.connection.connections[0];
+      if (previousConnection) {
+        previousConnection.node.disconnectIo(
+          previousConnection.ioId,
+          {
+            id: this.id as number,
+            ioId: targetInput.id,
+          },
+          'output',
+        );
+      }
+      targetInput.connection.connections = [
+        {
+          node: sourceNode,
+          ioId: sourceOutputId,
+        },
+      ];
+    } else {
+      targetInput.connection.connections.push({
+        node: sourceNode,
+        ioId: sourceOutputId,
+      });
+    }
+    this.onOwnIOConnection(targetInput, sourceNodeOutput);
+  }
+
+  public connectOutput(
+    targetNode: NodeWithId,
+    targetInputId: number,
+    sourceOutputQuery: string | number,
+  ) {
+    const sourceOutput = this.getOutput(sourceOutputQuery);
+    const targetInput = targetNode.getInput(targetInputId);
+    if (!sourceOutput || !targetInput) return;
+    sourceOutput.connection.connected = true;
+    sourceOutput.connection.connections.push({
+      node: targetNode,
+      ioId: targetInputId,
+    });
+    this.onOwnIOConnection(sourceOutput, targetInput);
+  }
+
+  public disconnectIo(
+    ownId: number,
+    connectionInfo: { id: number; ioId: number },
+    kind: 'input' | 'output',
+  ) {
+    const targetIo = this.getIo(ownId, kind);
+    if (!targetIo) return;
+    const connectionIndex = targetIo.connection.connections.findIndex(
+      (c) => c.node.id === connectionInfo.id && c.ioId === connectionInfo.ioId,
+    );
+    if (connectionIndex >= 0) {
+      targetIo.connection.connections.splice(connectionIndex, 1);
+    }
+    targetIo.connection.connected = targetIo.connection.connections.length > 0;
+    this.onOwnInputDisconnection(targetIo);
+  }
+
+  public async setIoValue(
+    ioId: number,
+    value: DefinedIOType,
+    kind: NodeIO['kind'],
+    executeConnected = true,
+  ) {
+    const io = this.getIo(ioId, kind);
+    valueSetter: {
+      if (!io) break valueSetter;
+      io.value = value;
+      // update self and then nodes connected to own outputs
+      if (executeConnected) {
+        this.executeConnectedNodes();
+      }
+    }
+    return io;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async onOwnIOConnection(_ownIO: NodeIOWithId, _foreignIO: NodeIOWithId) {
+    // console.log(
+    //   `${this.title}Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign ${foreignIO.node.title} Node ${foreignIO.node.id}, ${foreignIO.kind} ${foreignIO.id}`,
+    // );
+    // update connected nodes on input connection change
+    if (_ownIO.kind === 'input') {
+      this.executeConnectedNodes();
+    }
+  }
+
+  protected async fetchInputValues() {
     return await Promise.all(
       this.inputs.map(async (input) => {
         // check if input is connected.
@@ -100,7 +237,8 @@ export class Node<
         const inputPayload =
           filteredOutputValues.length === 0
             ? { value: input.value, type: input.type }
-            : filteredOutputValues.length === 1 && !input.multi
+            : filteredOutputValues.length === 1 &&
+              (!input.multi || input.type === 'any')
               ? filteredOutputValues[0]
               : {
                 type: input.type,
@@ -116,40 +254,7 @@ export class Node<
     );
   }
 
-  async execute() {
-    // fetch all needed inputs from connected nodes
-    console.log('execute', this.title);
-    const inputs = await this.fetchInputValues();
-    // return undefined if some input values are
-    if (inputs.some(({ value }) => isUndefined(value))) return undefined;
-
-    // run node operation
-    const results = await this.operation(
-      inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
-    );
-
-    console.log(results);
-    // update node's outputted values
-    const r = Array.isArray(results) ? results : [results];
-    r.forEach((result) => {
-      const index = this.outputs.findIndex(({ name }) => name === result.name);
-      if (index < 0) return;
-      this.outputs[index].value = result.value;
-    });
-    // return results for external consumption
-    return r;
-  }
-
-  assignId(
-    id: number,
-    runtime: Runtime,
-  ): NodeWithId<InputTypeNames, InputTypeNames> {
-    this.id = id;
-    this.runtime = runtime;
-    return this as NodeWithId<InputTypeNames, InputTypeNames>;
-  }
-
-  getOutput(query: string | number) {
+  protected getOutput(query: string | number) {
     return this.outputs.find(
       ({ id, name }) =>
         (typeof query === 'number' && id === query) ||
@@ -157,7 +262,7 @@ export class Node<
     );
   }
 
-  getInput(query: string | number) {
+  protected getInput(query: string | number) {
     return this.inputs.find(
       ({ id, name }) =>
         (typeof query === 'number' && id === query) ||
@@ -165,72 +270,7 @@ export class Node<
     );
   }
 
-  getIo(query: string | number, kind: NodeIO['kind']) {
-    return (kind === 'input' ? this.getInput : this.getOutput).bind(this)(
-      query,
-    );
-  }
-
-  connectInput(
-    sourceNode: NodeWithId,
-    sourceOutputId: number,
-    targetInputQuery: string | number,
-  ) {
-    const targetInput = this.getInput(targetInputQuery);
-    const sourceNodeOutput = sourceNode.getOutput(sourceOutputId);
-    if (!targetInput || !sourceNodeOutput) return;
-
-    targetInput.connection.connected = true;
-    if (!targetInput.multi) {
-      targetInput.connection.connections = [
-        {
-          node: sourceNode,
-          ioId: sourceOutputId,
-        },
-      ];
-    } else {
-      targetInput.connection.connections.push({
-        node: sourceNode,
-        ioId: sourceOutputId,
-      });
-    }
-    this.onOwnIOConnection(targetInput, sourceNodeOutput);
-  }
-
-  connectOutput(
-    targetNode: NodeWithId,
-    targetInputId: number,
-    sourceOutputQuery: string | number,
-  ) {
-    const sourceOutput = this.getOutput(sourceOutputQuery);
-    const targetInput = targetNode.getInput(targetInputId);
-    if (!sourceOutput || !targetInput) return;
-    sourceOutput.connection.connected = true;
-    sourceOutput.connection.connections.push({
-      node: targetNode,
-      ioId: targetInputId,
-    });
-    this.onOwnIOConnection(sourceOutput, targetInput);
-  }
-
-  disconnectIo(
-    ownId: number,
-    connectionInfo: { id: number; ioId: number },
-    kind: 'input' | 'output',
-  ) {
-    const targetIo = this.getIo(ownId, kind);
-    if (!targetIo) return;
-    const connectionIndex = targetIo.connection.connections.findIndex(
-      (c) => c.node.id === connectionInfo.id && c.ioId === connectionInfo.ioId,
-    );
-    if (connectionIndex >= 0) {
-      targetIo.connection.connections.splice(connectionIndex, 1);
-    }
-    targetIo.connection.connected = targetIo.connection.connections.length > 0;
-    this.onOwnInputDisconnection(targetIo);
-  }
-
-  setupSelf(options: {
+  protected setupSelf(options: {
     type?: NodeTypeName;
     category?: NodeCategory;
     title?: string;
@@ -242,7 +282,7 @@ export class Node<
     this.kind = options.kind ?? this.kind;
   }
 
-  executeConnectedNodes() {
+  protected executeConnectedNodes() {
     // console.log('executeConnectedNodes', this.title);
     // run node.execute() on nodes connected to own outputs for them to refresh internal values
     this.outputs.forEach((output) => {
@@ -254,30 +294,29 @@ export class Node<
     });
   }
 
-  async setIoValue(ioId: number, value: DefinedIOType, kind: NodeIO['kind']) {
-    const io = this.getIo(ioId, kind);
-    valueSetter: {
-      if (!io) break valueSetter;
-      io.value = value;
-      // update self and then nodes connected to own outputs
-      this.executeConnectedNodes();
-    }
-    return io;
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async onOwnIOConnection(_ownIO: NodeIOWithId, _foreignIO: NodeIOWithId) {
-    // console.log(
-    //   `${this.title}Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign ${foreignIO.node.title} Node ${foreignIO.node.id}, ${foreignIO.kind} ${foreignIO.id}`,
-    // );
-    // update connected nodes on input connection change
-    if (_ownIO.kind === 'input') {
-      this.executeConnectedNodes();
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onOwnInputDisconnection(_ownIO: NodeIOWithId) {
+  protected onOwnInputDisconnection(_ownIO: NodeIOWithId) {
     // console.log('Disconnected own input ', _ownIO.id);
+  }
+
+  // recursive search through connected nodes inputs to find node with a specific kind
+  protected getSpecificInputNode(
+    kind: AnyNodeKey,
+  ): Node<IOTypeName[], IOTypeName[]> | undefined {
+    const isSearchedKind = (n: Node<IOTypeName[], IOTypeName[]> | undefined) =>
+      isDefined(n) && n.kind === kind;
+    const thisNode = this as Node<IOTypeName[], IOTypeName[]>;
+    if (isSearchedKind(thisNode)) return thisNode;
+    if (this.inputs.length === 0) return undefined;
+
+    const inputNodes = thisNode.inputs
+      .filter((i) => i.connection.connected)
+      .map(({ connection }) =>
+        connection.connections.map(({ node }) =>
+          node.getSpecificInputNode(kind),
+        ),
+      )
+      .flat(1);
+    return inputNodes.find((n) => isSearchedKind(n));
   }
 }

@@ -1,7 +1,6 @@
 import {
   AddMathNode,
   DivideMathNode,
-  MathNode,
   MultiplyMathNode,
   SubtractMathNode,
 } from './math';
@@ -10,11 +9,9 @@ import {
   NumberValueNode,
   ObjectValueNode,
   StringValueNode,
-  ValueNode,
 } from './value';
 import {
   AndBooleanMathNode,
-  BooleanMathNode,
   NandBooleanMathNode,
   NorBooleanMathNode,
   NotBooleanMathNode,
@@ -32,14 +29,12 @@ import {
   StringReplaceNode,
   StringSliceNode,
 } from './string';
-import { RuntimeOutputNode } from './runtime';
-
-export const MathNodeIndex = {
-  'math::add': AddMathNode,
-  'math::subtract': SubtractMathNode,
-  'math::multiply': MultiplyMathNode,
-  'math::divide': DivideMathNode,
-} as const;
+import { RuntimeLogNode, RuntimeOutputNode } from './runtime';
+import { CurrentIndexLogicNode } from './logic/currentIndex';
+import { ForLoopLogicNode } from './logic/forLoop';
+import { BranchLogicNode } from './logic/branch';
+import { LogicCompareNode } from './logic/compare';
+import { CreatePropertyObjectNode } from './object/property';
 
 const MathNodeKeys = [
   'math::add',
@@ -48,29 +43,12 @@ const MathNodeKeys = [
   'math::divide',
 ] as const;
 
-export const ValueNodeIndex = {
-  'value::number': NumberValueNode,
-  'value::string': StringValueNode,
-  'value::object': ObjectValueNode,
-  'value::boolean': BooleanValueNode,
-} as const;
-
 const ValueNodeKeys = [
   'value::number',
   'value::string',
   'value::object',
   'value::boolean',
 ] as const;
-
-export const BooleanMathNodeIndex = {
-  'booleanmath::and': AndBooleanMathNode,
-  'booleanmath::or': OrBooleanMathNode,
-  'booleanmath::nand': NandBooleanMathNode,
-  'booleanmath::nor': NorBooleanMathNode,
-  'booleanmath::xor': XOrBooleanMathNode,
-  'booleanmath::xnor': XNorBooleanMathNode,
-  'booleanmath::not': NotBooleanMathNode,
-};
 
 const BooleanMathNodeKeys = [
   'booleanmath::and',
@@ -81,13 +59,6 @@ const BooleanMathNodeKeys = [
   'booleanmath::xnor',
   'booleanmath::not',
 ] as const;
-
-export const GenericNodeIndex = {
-  'generic::node': Node,
-  'generic::math': MathNode,
-  'generic::value': ValueNode,
-  'generic::booleanmath': BooleanMathNode,
-};
 
 const GenericNodeKeys = [
   'generic::node',
@@ -107,7 +78,16 @@ const StringNodeKeys = [
   'string::deleteat',
 ] as const;
 
-export const RuntimeNodeKeys = ['runtime::output'] as const;
+export const RuntimeNodeKeys = ['runtime::output', 'runtime::log'] as const;
+
+export const LogicNodeKeys = [
+  'logic::currentindex',
+  'logic::forloop',
+  'logic::branch',
+  'logic::compare',
+] as const;
+
+export const ObjectNodeKeys = ['object::property::create'] as const;
 
 const AllNodeKeys = [
   ...MathNodeKeys,
@@ -115,6 +95,8 @@ const AllNodeKeys = [
   ...BooleanMathNodeKeys,
   ...StringNodeKeys,
   ...RuntimeNodeKeys,
+  ...LogicNodeKeys,
+  ...ObjectNodeKeys,
 ] as const;
 
 export const NodeIndex = {
@@ -142,21 +124,14 @@ export const NodeIndex = {
   'string::delete': StringDeleteNode,
   'string::deleteat': StringDeleteAtNode,
   'runtime::output': RuntimeOutputNode,
+  'runtime::log': RuntimeLogNode,
+  'logic::currentindex': CurrentIndexLogicNode,
+  'logic::forloop': ForLoopLogicNode,
+  'logic::branch': BranchLogicNode,
+  'logic::compare': LogicCompareNode,
+  'object::property::create': CreatePropertyObjectNode,
 } as const;
 
-export type AnyMathNodeKey = typeof MathNodeKeys[number];
-export type AnyBooleanMathNodeKey = typeof BooleanMathNodeKeys[number];
-export type AnyValueNodeKey = typeof ValueNodeKeys[number];
 export type AnyGenericNodeKey = typeof GenericNodeKeys[number];
 
 export type AnyNodeKey = typeof AllNodeKeys[number];
-
-export const isMathNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey =>
-  k.split('::')[0] === 'math';
-export const isValueNodeKey = (k: AnyNodeKey): k is AnyValueNodeKey =>
-  k.split('::')[0] === 'value';
-export const isGenericNodeKey = (k: AnyNodeKey): k is AnyMathNodeKey =>
-  k.split('::')[0] === 'generic';
-export const isBooleanMathNodeKey = (
-  k: AnyNodeKey,
-): k is AnyBooleanMathNodeKey => k.split('::')[0] === 'booleanmath';

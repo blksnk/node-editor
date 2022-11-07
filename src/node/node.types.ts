@@ -33,7 +33,7 @@ export type IOTypeMap<TN extends IOTypeName> = TN extends 'string'
   : TN extends 'number'
   ? number
   : TN extends 'object'
-  ? Record<string, IOType>[]
+  ? { [p: string]: IOType }
   : TN extends 'boolean'
   ? boolean
   : TN extends 'property'
@@ -74,19 +74,27 @@ export interface PropertyIOType<
   type: TN;
 }
 
+export interface ObjectIOType {
+  __propTypes: {
+    [p: string]: IOTypeName;
+  };
+
+  [p: string]: IOType;
+}
+
 export type IOArrayType =
   | number[]
   | string[]
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  | Record<string, IOType>[]
+  | ObjectIOType[]
   | boolean[];
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 export type IOType = Exclude<
   | string
   | number
-  | Record<string, unknown>
+  | ObjectIOType
   | boolean
   | IOArrayType
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -156,8 +164,6 @@ export type NodeOperation<
 ) =>
   | NodeIoToNodeOperationArgument<OTN>
   | Promise<NodeIoToNodeOperationArgument<OTN>>;
-
-export type WithDefinedId<T extends { id?: number }> = T & { id: number };
 
 export interface NodeWithId<
   ITN extends IOTypeName[] = IOTypeName[],

@@ -12,8 +12,9 @@
   border: 1px solid var(--dark-grey);
   border-radius: var(--unit-h);
   background-color: var(--off-black);
-  max-width: max-content;
   min-width: 200px;
+  //max-width: max-content;
+  max-width: 200px;
   transform: translate(var(--x-pos), var(--y-pos));
   z-index: 1;
   font-size: var(--unit);
@@ -71,6 +72,23 @@
     }
   }
 
+  .node__card__title {
+    @include vars.node-title;
+    pointer-events: none;
+  }
+
+  &.node__category__runtime {
+    --bg: var(--white);
+
+    .node__card__title {
+      color: var(--off-black);
+    }
+
+    svg path {
+      fill: var(--off-black);
+    }
+  }
+
   .node__help__button {
     opacity: 0.5;
 
@@ -84,10 +102,6 @@
   }
 }
 
-.node__card__title {
-  @include vars.node-title;
-  pointer-events: none;
-}
 
 .node__io__container {
   display: flex;
@@ -115,6 +129,7 @@
 
   .node__io__row__container {
     flex-grow: 1;
+    //max-width: calc(100% - var(--unit-d));
     padding: var(--unit-hh);
     border-radius: 2px;
     height: 22px;
@@ -144,7 +159,7 @@
   }
 
   &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input)
-    .node__io__row__container {
+  .node__io__row__container {
     background: var(--dark-grey);
 
     &:hover {
@@ -181,6 +196,7 @@
 
 .node__io__name {
   @include vars.node-io-name;
+  white-space: nowrap;
 }
 
 .node__io__name,
@@ -189,11 +205,14 @@
 }
 
 .node__io__text__input {
+  display: block;
   border: none;
   background: none;
   padding: 0;
   height: 100%;
-  flex-grow: 1;
+  min-width: 0;
+  width: 100%;
+  flex: 1;
   text-align: right;
   @include vars.node-io-value;
 

@@ -151,6 +151,7 @@ export const updateIoRow = (
 ) => {
   const isOutput = io.kind === 'output';
   const isConnected = io.connection?.connected ?? false;
+  if (isConnected) console.log(io);
   // update row data attrs with updated data
   storeIoInformation(row, io);
 
