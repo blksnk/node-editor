@@ -76,7 +76,7 @@ export class StringReplaceNode extends Node<
       const [s, toReplace, replaceBy, replaceAll] = inputs;
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value: (replaceAll.value ? s.value.replaceAll : s.value.replace)(
             toReplace.value,
@@ -110,9 +110,10 @@ export class StringJoinNode extends Node<['string[]', 'string'], ['string']> {
       inputs,
     ) => {
       const [strings, joinWith] = inputs;
+      console.log(inputs);
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value: strings.value.join(joinWith.value),
         },
@@ -143,7 +144,7 @@ export class StringAppendNode extends Node<['string', 'string'], ['string']> {
       const [string, toAppend] = inputs;
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value: string.value + toAppend.value,
         },
@@ -174,7 +175,7 @@ export class StringPrependNode extends Node<['string', 'string'], ['string']> {
       const [string, toPrepend] = inputs;
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value: toPrepend.value + string.value,
         },
@@ -205,7 +206,7 @@ export class StringDeleteNode extends Node<['string', 'string'], ['string']> {
       const [string, toDelete] = inputs;
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value: string.value.replace(toDelete.value, ''),
         },
@@ -240,7 +241,7 @@ export class StringDeleteAtNode extends Node<
       const [string, startIndex, endIndex] = inputs;
       return [
         {
-          name: 'Slice',
+          name: 'String',
           type: 'string',
           value:
             string.value.substring(0, startIndex.value) +

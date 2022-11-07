@@ -1,6 +1,12 @@
 import { Node } from './node';
 import { defineNodeIO } from './defaults';
-import { DefinedIOType, IOType, IOTypeName, NodeIO } from './node.types';
+import {
+  DefinedIOType,
+  IOType,
+  IOTypeName,
+  NodeIO,
+  NodeIOWithId,
+} from './node.types';
 import { isUndefined } from '../utils/data';
 
 export class RuntimeOutputNode extends Node<['string', 'any'], []> {
@@ -49,5 +55,25 @@ export class RuntimeOutputNode extends Node<['string', 'any'], []> {
       value,
       type,
     });
+  }
+
+  override async executeConnectedNodes() {
+    await this.execute();
+    super.executeConnectedNodes();
+  }
+
+  // override async onOwnIOConnection(
+  //   _ownIO: NodeIOWithId,
+  //   foreignIO: NodeIOWithId,
+  // ): Promise<void> {
+  //   await this.execute();
+  //   super.onOwnIOConnection(_ownIO, foreignIO);
+  // }
+
+  override async onOwnInputDisconnection(_ownIO: NodeIOWithId): Promise<void> {
+    super.onOwnInputDisconnection(_ownIO);
+    if (_ownIO.name === 'Value') {
+      this.updateOwnValue(_ownIO.value, _ownIO.type);
+    }
   }
 }

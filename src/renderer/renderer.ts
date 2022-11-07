@@ -337,7 +337,6 @@ export class Renderer {
       this.pendingConnection.inputNode !== undefined &&
       this.pendingConnection.active
     ) {
-      console.log({ ...this.pendingConnection });
       this.runtime.connectNodes(this.pendingConnection);
     } else {
       // TODO: Show type error to user

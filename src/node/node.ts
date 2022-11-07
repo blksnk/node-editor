@@ -85,7 +85,7 @@ export class Node<
           input.connection.connections.map(async ({ node, ioId }) => {
             // always execute node before getting output value
             await node.execute();
-            const output: NodeIOWithId | undefined = node.getOutput(ioId);
+            const output = node.getOutput(ioId);
             if (!output) return undefined;
             return { value: output.value ?? undefined, type: output.type };
           }),
@@ -100,9 +100,14 @@ export class Node<
         const inputPayload =
           filteredOutputValues.length === 0
             ? { value: input.value, type: input.type }
-            : filteredOutputValues.length === 1
+            : filteredOutputValues.length === 1 && !input.multi
               ? filteredOutputValues[0]
-              : filteredOutputValues;
+              : {
+                type: input.type,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                value: filteredOutputValues.map(({ value }) => value).flat(1), // flatten array if multiple inputs connected and some of them are arrays
+              };
         return {
           ...input,
           ...inputPayload,
@@ -122,6 +127,8 @@ export class Node<
     const results = await this.operation(
       inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
     );
+
+    console.log(results);
     // update node's outputted values
     const r = Array.isArray(results) ? results : [results];
     r.forEach((result) => {
@@ -220,6 +227,7 @@ export class Node<
       targetIo.connection.connections.splice(connectionIndex, 1);
     }
     targetIo.connection.connected = targetIo.connection.connections.length > 0;
+    this.onOwnInputDisconnection(targetIo);
   }
 
   setupSelf(options: {
@@ -235,13 +243,12 @@ export class Node<
   }
 
   executeConnectedNodes() {
-    console.log('executeConnectedNodes', this.title);
+    // console.log('executeConnectedNodes', this.title);
     // run node.execute() on nodes connected to own outputs for them to refresh internal values
     this.outputs.forEach((output) => {
       const { connected, connections } = output.connection;
       if (!connected) return; // exit early if output is not connected
       connections.forEach(async ({ node }) => {
-        await node.execute();
         node.executeConnectedNodes();
       });
     });
@@ -253,20 +260,24 @@ export class Node<
       if (!io) break valueSetter;
       io.value = value;
       // update self and then nodes connected to own outputs
-      await this.execute();
       this.executeConnectedNodes();
     }
     return io;
   }
 
-  async onOwnIOConnection(_ownIO: NodeIOWithId, foreignIO: NodeIOWithId) {
-    console.log(
-      `${this.title}Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign Node ${foreignIO.node.id}, ${foreignIO.kind} ${foreignIO.id}`,
-    );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async onOwnIOConnection(_ownIO: NodeIOWithId, _foreignIO: NodeIOWithId) {
+    // console.log(
+    //   `${this.title}Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign ${foreignIO.node.title} Node ${foreignIO.node.id}, ${foreignIO.kind} ${foreignIO.id}`,
+    // );
     // update connected nodes on input connection change
     if (_ownIO.kind === 'input') {
-      await this.execute();
       this.executeConnectedNodes();
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onOwnInputDisconnection(_ownIO: NodeIOWithId) {
+    // console.log('Disconnected own input ', _ownIO.id);
   }
 }

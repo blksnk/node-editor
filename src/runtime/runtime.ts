@@ -179,7 +179,6 @@ export class Runtime {
 
     valueSetter: {
       if (!node) break valueSetter;
-      console.log('set node value');
       node.setIoValue(ioId, value, kind);
       this.renderer.updateCardIos();
     }
