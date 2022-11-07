@@ -32,6 +32,7 @@ import {
   StringReplaceNode,
   StringSliceNode,
 } from './string';
+import { RuntimeOutputNode } from './runtime';
 
 export const MathNodeIndex = {
   'math::add': AddMathNode,
@@ -106,11 +107,14 @@ const StringNodeKeys = [
   'string::deleteat',
 ] as const;
 
+export const RuntimeNodeKeys = ['runtime::output'] as const;
+
 const AllNodeKeys = [
   ...MathNodeKeys,
   ...ValueNodeKeys,
   ...BooleanMathNodeKeys,
   ...StringNodeKeys,
+  ...RuntimeNodeKeys,
 ] as const;
 
 export const NodeIndex = {
@@ -137,6 +141,7 @@ export const NodeIndex = {
   'string::prepend': StringPrependNode,
   'string::delete': StringDeleteNode,
   'string::deleteat': StringDeleteAtNode,
+  'runtime::output': RuntimeOutputNode,
 } as const;
 
 export type AnyMathNodeKey = typeof MathNodeKeys[number];

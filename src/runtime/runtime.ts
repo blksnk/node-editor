@@ -1,7 +1,8 @@
-import { Node } from '../node/node';
 import {
   DefinedIOType,
   IOArrayTypeNames,
+  IOType,
+  IOTypeName,
   NodeIO,
   NodeWithId,
 } from '../node/node.types';
@@ -11,15 +12,18 @@ import {
   NodeConnection,
   NodeConnectionAttempt,
   NodeConnectionBreak,
+  RuntimeOutput,
 } from './runtime.types';
 import { getUniqueConnections } from '../renderer/connection';
 import { findById, getSingleType } from '../utils/data';
 import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
+import { RuntimeOutputNode } from '../node/runtime';
 
 export class Runtime {
-  nodes: NodeWithId[] = [];
+  nodes: NodeWithId<IOTypeName[], IOTypeName[]>[] = [];
   connections: NodeConnection[] = [];
+  outputs: RuntimeOutput[] = [];
   nextNodeId = 0;
   renderer: Renderer;
   keyboard: KeyboardHandler;
@@ -33,8 +37,25 @@ export class Runtime {
     });
   }
 
-  registerNode(node: Node, position?: Vec2) {
-    const withId = node.assignId(this.nextNodeId);
+  registerNode(
+    node: InstanceType<typeof NodeIndex[AnyNodeKey]>,
+    position?: Vec2,
+  ) {
+    const withId = node.assignId(
+      this.nextNodeId,
+      this,
+    ) as unknown as NodeWithId;
+    if (withId.kind === 'runtime::output') {
+      const outputNode = withId as unknown as RuntimeOutputNode & {
+        id: number;
+      };
+      this.createOutput({
+        name: outputNode.inputs[0].value,
+        value: outputNode.inputs[1].value,
+        type: outputNode.inputs[1].type,
+        id: outputNode.id,
+      });
+    }
     this.nextNodeId++;
     this.nodes.push(withId);
     this.renderer.attachNode(withId, position);
@@ -48,7 +69,7 @@ export class Runtime {
 
   createNode(k: AnyNodeKey, position?: Vec2) {
     const node = new NodeIndex[k]();
-    this.registerNode(node as unknown as Node, position);
+    this.registerNode(node, position);
   }
 
   deleteNode(id: number) {
@@ -63,6 +84,10 @@ export class Runtime {
 
   getNode(query: number) {
     return findById(this.nodes, query);
+  }
+
+  findOutput(query: number) {
+    return findById(this.outputs, query);
   }
 
   connectNodes(connection: {
@@ -116,7 +141,6 @@ export class Runtime {
     const inputNode = findById(this.nodes, connection.inputNode.id);
     const outputNode = findById(this.nodes, connection.outputNode.id);
     if (!inputNode || !outputNode) return;
-    console.log(inputNode, outputNode, connection);
     inputNode.disconnectIo(
       connection.inputNode.ioId,
       connection.outputNode,
@@ -131,14 +155,16 @@ export class Runtime {
   }
 
   checkConnectionAttempt(candidate: NodeConnectionAttempt): boolean {
+    const inputType = candidate.inputNode.type;
+    const outputType = candidate.outputNode.type;
     const singleConnectingToMulti =
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      IOArrayTypeNames.includes(candidate.inputNode.type) &&
-      getSingleType(candidate.inputNode.type) === candidate.outputNode.type;
+      IOArrayTypeNames.includes(inputType) &&
+      getSingleType(inputType) === outputType;
+    const inputIsAnyType = inputType === 'any' || inputType === 'any[]';
     const typeValid =
-      candidate.inputNode.type === candidate.outputNode.type ||
-      singleConnectingToMulti;
+      inputType === outputType || singleConnectingToMulti || inputIsAnyType;
     const notSameNode = candidate.inputNode.id !== candidate.outputNode.id;
     return typeValid && notSameNode;
   }
@@ -157,5 +183,31 @@ export class Runtime {
       node.setIoValue(ioId, value, kind);
       this.renderer.updateCardIos();
     }
+  }
+
+  createOutput(node: {
+    id: number;
+    name: string;
+    type: IOTypeName;
+    value: IOType;
+  }) {
+    this.outputs.push({
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      value: node.value,
+    });
+  }
+
+  updateOutput(
+    outputId: number,
+    updatePayload: { name?: string; value?: DefinedIOType; type?: IOTypeName },
+  ) {
+    console.log('update output', updatePayload);
+    const output = this.findOutput(outputId);
+    if (!output) return;
+    output.name = updatePayload.name ?? output.name;
+    output.value = updatePayload.value ?? output.value;
+    output.type = updatePayload.type ?? output.type;
   }
 }

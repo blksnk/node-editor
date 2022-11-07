@@ -139,7 +139,6 @@ export class Renderer {
   }
 
   private onCardDown(nodeId: number) {
-    console.log(nodeId);
     if (!this.selectedCardIds.has(nodeId) && !this.keyboard.shift) {
       this.resetSelectedCards();
     }
@@ -148,7 +147,6 @@ export class Renderer {
   }
 
   private onCardUp(nodeId: number) {
-    console.log(this.hasMoved);
     if (
       this.selectedCardIds.has(nodeId) &&
       !this.hasMoved &&
@@ -230,7 +228,6 @@ export class Renderer {
     this.mouseDownPos = pos;
     this.mousePos = pos;
     const info = getIoInformation(el);
-    console.log(info);
 
     // check if input is connected
     if (info.connected) {
@@ -325,7 +322,6 @@ export class Renderer {
   private onOutputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
     this.mousePos = clickPos(e);
-    console.log('o up');
     const info = getIoInformation(el);
     // only allow connection between input and output nodes, not both of same kind
     if (this.pendingConnection.active && this.pendingConnection.inputNode) {

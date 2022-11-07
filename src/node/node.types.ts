@@ -49,8 +49,8 @@ export type IOTypeMap<TN extends IOTypeName> = TN extends 'string'
   : TN extends 'property[]'
   ? PropertyIOType[]
   : TN extends 'any[]'
-  ? undefined[]
-  : undefined;
+  ? unknown[]
+  : unknown;
 
 export const NodeTypeNames = [...IOTypeNames, 'base'] as const;
 
@@ -92,8 +92,8 @@ export type IOType = Exclude<
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   | PropertyIOType
-  | undefined,
-  never
+  | unknown,
+  undefined
 >;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -106,7 +106,7 @@ export interface NodeIO<TN extends IOTypeName = IOTypeName> {
   connection: {
     connected: boolean;
     connections: {
-      node: Node;
+      node: NodeWithId;
       ioId: number;
     }[];
   };
@@ -157,9 +157,11 @@ export type NodeOperation<
   | NodeIoToNodeOperationArgument<OTN>
   | Promise<NodeIoToNodeOperationArgument<OTN>>;
 
+export type WithDefinedId<T extends { id?: number }> = T & { id: number };
+
 export interface NodeWithId<
-  ITN extends IOTypeName[] = DefinedIOTypeName[],
-  OTN extends IOTypeName[] = DefinedIOTypeName[],
+  ITN extends IOTypeName[] = IOTypeName[],
+  OTN extends IOTypeName[] = IOTypeName[],
 > extends Node<ITN, OTN> {
   id: number;
 }

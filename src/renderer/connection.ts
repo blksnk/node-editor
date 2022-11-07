@@ -84,7 +84,7 @@ export const resizeSvg = (
 };
 
 export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
-  const connections = nodes
+  return nodes
     .map((node) =>
       node.inputs.map((input) => {
         const outputNodeConnections = input.connection.connections.map((c) => {
@@ -107,12 +107,6 @@ export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
         }[];
         if (filteredOutputNodeConnections.length === 0) return undefined;
 
-        // const outputNodeType = findById(
-        //   outputNode.outputs,
-        //   input.connection?.ioId as number,
-        // )?.type;
-        console.log(filteredOutputNodeConnections);
-
         return filteredOutputNodeConnections.map((c) => ({
           inputNode: {
             node,
@@ -129,8 +123,6 @@ export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
       ...c,
       id: index,
     })) as NodeConnection[];
-  console.log(connections);
-  return connections;
 };
 
 export const assignIoPositions = (

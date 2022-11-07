@@ -29,7 +29,6 @@ export const createCardIoRow = (
   // style based on type and connection state
   li.classList.toggle(cssSelectors.ioRow.output, isOutput);
   li.classList.toggle(cssSelectors.ioRow.input, !isOutput);
-  console.log(io.type, io.editable);
   li.classList.toggle(cssSelectors.ioRow.editable, io.editable);
   li.classList.toggle(
     cssSelectors.ioRow.connected,

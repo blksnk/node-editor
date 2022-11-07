@@ -12,8 +12,9 @@ import {
   NodeTypeName,
   NodeWithId,
 } from './node.types';
-import { isDefined, isMultiIO } from '../utils/data';
+import { isDefined, isMultiIO, isUndefined } from '../utils/data';
 import { AnyGenericNodeKey, AnyNodeKey } from './nodeIndex';
+import { Runtime } from '../runtime/runtime';
 
 export class Node<
   InputTypeNames extends IOTypeName[] = DefinedIOTypeName[],
@@ -27,6 +28,7 @@ export class Node<
   type: NodeTypeName = 'base';
   category: NodeCategory = 'base';
   kind: AnyNodeKey | AnyGenericNodeKey = 'generic::node';
+  runtime?: Runtime;
 
   constructor({
     inputs,
@@ -85,10 +87,7 @@ export class Node<
             await node.execute();
             const output: NodeIOWithId | undefined = node.getOutput(ioId);
             if (!output) return undefined;
-            return {
-              value: output.value ?? undefined,
-              type: output.type,
-            };
+            return { value: output.value ?? undefined, type: output.type };
           }),
         );
         // filter out unusable connection values
@@ -97,22 +96,16 @@ export class Node<
         );
 
         // normalize response to fit with input type (array or not)
-        const inputValue =
-          filteredOutputValues.length === 1
-            ? filteredOutputValues[0]
-            : filteredOutputValues;
-        // let outputValue = connectedOutput?.value ?? undefined;
-        // // execute node if output value is undefined and override var
-        // if (outputValue === undefined) {
-        //   await input.connection.node.execute();
-        //   outputValue =
-        //     input.connection.node.getOutput(input.connection.ioId)?.value ??
-        //     undefined;
-        // }
-        // return input with value from connected output
+        // if no node is connected, use input's default value;
+        const inputPayload =
+          filteredOutputValues.length === 0
+            ? { value: input.value, type: input.type }
+            : filteredOutputValues.length === 1
+              ? filteredOutputValues[0]
+              : filteredOutputValues;
         return {
           ...input,
-          value: inputValue,
+          ...inputPayload,
         };
       }),
     );
@@ -120,9 +113,10 @@ export class Node<
 
   async execute() {
     // fetch all needed inputs from connected nodes
+    console.log('execute', this.title);
     const inputs = await this.fetchInputValues();
     // return undefined if some input values are
-    if (inputs.some(({ value }) => value === undefined)) return undefined;
+    if (inputs.some(({ value }) => isUndefined(value))) return undefined;
 
     // run node operation
     const results = await this.operation(
@@ -139,8 +133,12 @@ export class Node<
     return r;
   }
 
-  assignId(id: number): NodeWithId<InputTypeNames, InputTypeNames> {
+  assignId(
+    id: number,
+    runtime: Runtime,
+  ): NodeWithId<InputTypeNames, InputTypeNames> {
     this.id = id;
+    this.runtime = runtime;
     return this as NodeWithId<InputTypeNames, InputTypeNames>;
   }
 
@@ -153,8 +151,6 @@ export class Node<
   }
 
   getInput(query: string | number) {
-    console.log(this, this.inputs);
-
     return this.inputs.find(
       ({ id, name }) =>
         (typeof query === 'number' && id === query) ||
@@ -192,7 +188,6 @@ export class Node<
       });
     }
     this.onOwnIOConnection(targetInput, sourceNodeOutput);
-    sourceNode.onOwnIOConnection(sourceNodeOutput, targetInput);
   }
 
   connectOutput(
@@ -209,7 +204,6 @@ export class Node<
       ioId: targetInputId,
     });
     this.onOwnIOConnection(sourceOutput, targetInput);
-    targetNode.onOwnIOConnection(targetInput, sourceOutput);
   }
 
   disconnectIo(
@@ -240,17 +234,39 @@ export class Node<
     this.kind = options.kind ?? this.kind;
   }
 
-  setIoValue(ioId: number, value: DefinedIOType, kind: NodeIO['kind']) {
+  executeConnectedNodes() {
+    console.log('executeConnectedNodes', this.title);
+    // run node.execute() on nodes connected to own outputs for them to refresh internal values
+    this.outputs.forEach((output) => {
+      const { connected, connections } = output.connection;
+      if (!connected) return; // exit early if output is not connected
+      connections.forEach(async ({ node }) => {
+        await node.execute();
+        node.executeConnectedNodes();
+      });
+    });
+  }
+
+  async setIoValue(ioId: number, value: DefinedIOType, kind: NodeIO['kind']) {
     const io = this.getIo(ioId, kind);
     valueSetter: {
       if (!io) break valueSetter;
       io.value = value;
+      // update self and then nodes connected to own outputs
+      await this.execute();
+      this.executeConnectedNodes();
     }
+    return io;
   }
 
-  onOwnIOConnection(_ownIO: NodeIOWithId, _foreignIO: NodeIOWithId) {
+  async onOwnIOConnection(_ownIO: NodeIOWithId, foreignIO: NodeIOWithId) {
     console.log(
-      `Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign Node ${_foreignIO.node.id}, ${_foreignIO.kind} ${_foreignIO.id}`,
+      `${this.title}Node ${this.id}: ${_ownIO.kind} ${_ownIO.id} connected to Foreign Node ${foreignIO.node.id}, ${foreignIO.kind} ${foreignIO.id}`,
     );
-  } // blank callback to be overwritten by some nodes
+    // update connected nodes on input connection change
+    if (_ownIO.kind === 'input') {
+      await this.execute();
+      this.executeConnectedNodes();
+    }
+  }
 }

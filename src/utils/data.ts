@@ -21,7 +21,13 @@ export const isDefined = <T extends unknown | undefined>(
   item: T,
 ): item is Exclude<T, undefined> => item !== undefined;
 
+export const isUndefined = <T>(item: T | undefined): item is undefined =>
+  item === undefined;
+
 export const getSingleType = (
   t: IOTypeName,
 ): Exclude<IOTypeName, IOArrayTypeName> =>
   t.split('[]')[0] as Exclude<IOTypeName, IOArrayTypeName>;
+
+export const isArrayType = (t: IOTypeName): t is IOArrayTypeName =>
+  !!t.split('[]')[1];

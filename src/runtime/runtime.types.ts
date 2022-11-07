@@ -1,4 +1,4 @@
-import { IOTypeName, NodeWithId } from '../node/node.types';
+import { IOType, IOTypeName, NodeWithId } from '../node/node.types';
 
 export interface NodeConnection {
   inputNode: {
@@ -38,4 +38,11 @@ export interface NodeConnectionBreak {
     ioId: number;
     type: IOTypeName;
   };
+}
+
+export interface RuntimeOutput {
+  id: number;
+  name: string;
+  value: IOType;
+  type: IOTypeName;
 }

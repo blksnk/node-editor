@@ -10,7 +10,7 @@ import { defaultValues, defineNodeIO } from './defaults';
 export class ValueNode<
   T extends DefinedIOType,
   TN extends IOTypeName,
-> extends Node<[T], [TN]> {
+> extends Node<[], [TN]> {
   constructor(defaultValue: T, type: TN) {
     super({
       inputs: [],
