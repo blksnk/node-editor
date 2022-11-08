@@ -4,11 +4,11 @@ import {
   NodeIOWithId,
   NodeWithId,
 } from '../../node/node.types';
-import { RendererNode, Vec2 } from '../renderer.types';
+import { RendererNode, Vec2 } from '../../renderer/renderer.types';
 import { createCardIoRow, updateIoRow } from './ioRow';
 import { findById } from '../../utils/data';
 import { Runtime } from '../../runtime/runtime';
-import { cssSelectors } from './cssSelectors';
+import { cssSelectors } from '../cssSelectors';
 import { element } from '../../utils/document';
 import { Icon } from './icons';
 

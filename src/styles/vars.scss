@@ -1,5 +1,5 @@
 :root {
-  --white: white;
+  --white: #fff;
   --white-90: rgba(255, 255, 255, 0.87);
   --white-50: rgba(255, 255, 255, 0.5);
   --light-grey: #c0c0c0;
@@ -16,7 +16,7 @@
   --boolean: #3c4de9;
   --string: #afb203;
   --object: #d48af6;
-  --any: var(--white);
+  --any: #fff;
   --property: #ffae33;
   --array: #61bb6a;
 
@@ -34,27 +34,27 @@
 }
 
 @mixin type-var($prop: '--type') {
-  &.number {
+  &.node__type__number {
     #{$prop}: var(--number);
   }
 
-  &.object {
+  &.node__type__object {
     #{$prop}: var(--object);
   }
 
-  &.string {
+  &.node__type__string {
     #{$prop}: var(--string);
   }
 
-  &.boolean {
+  &.node__type__boolean {
     #{$prop}: var(--boolean);
   }
 
-  &.any {
+  &.node__type__any {
     #{$prop}: var(--any);
   }
 
-  &.property {
+  &.node__type__property {
     #{$prop}: var(--property);
   }
 }
@@ -78,4 +78,26 @@
   font-size: 10px;
   font-weight: 400;
   color: var(--white-50);
+}
+
+@mixin node-category-title {
+  font-family: var(--f-sans);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--white);
+}
+
+@mixin flex-column($gap: var(--unit)) {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+@mixin flex-row($justify: space-between, $align: center) {
+  display: flex;
+  flex-direction: row;
+  justify-content: $justify;
+  align-items: $align;
 }

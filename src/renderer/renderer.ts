@@ -29,11 +29,11 @@ import {
   setCardHighlight,
   setCardPosition,
   updateAllCardIos,
-} from './components/card';
-import { getIoInformation } from './components/ioRow';
+} from '../ui/components/card';
+import { getIoInformation } from '../ui/components/ioRow';
 import { KeyboardHandler } from '../keyboard/keyboard';
 import { element } from '../utils/document';
-import { cssSelectors } from './components/cssSelectors';
+import { cssSelectors } from '../ui/cssSelectors';
 
 export class Renderer {
   root: HTMLDivElement;
@@ -59,7 +59,7 @@ export class Renderer {
     this.target = options.target;
     this.runtime = options.runtime;
     this.keyboard = options.keyboard;
-    this.root = element<HTMLDivElement>('div');
+    this.root = element<HTMLDivElement>('div', cssSelectors.renderer.root);
     this.connectionRoot = createConnectionSvg();
     this.attachRoot();
     this.initGlobalEvents();
@@ -159,7 +159,6 @@ export class Renderer {
   }
 
   private attachRoot() {
-    this.root.classList.add('node__renderer__root');
     this.target.appendChild(this.root);
     this.root.appendChild(this.connectionRoot);
   }

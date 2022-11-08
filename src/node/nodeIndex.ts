@@ -1,42 +1,35 @@
-import {
-  AddMathNode,
-  DivideMathNode,
-  MultiplyMathNode,
-  SubtractMathNode,
-} from './math';
-import {
-  BooleanValueNode,
-  NumberValueNode,
-  ObjectValueNode,
-  StringValueNode,
-} from './value';
-import {
-  AndBooleanMathNode,
-  NandBooleanMathNode,
-  NorBooleanMathNode,
-  NotBooleanMathNode,
-  OrBooleanMathNode,
-  XNorBooleanMathNode,
-  XOrBooleanMathNode,
-} from './booleanMath';
-import {
-  StringAppendNode,
-  StringDeleteAtNode,
-  StringDeleteNode,
-  StringJoinNode,
-  StringLengthNode,
-  StringPrependNode,
-  StringReplaceNode,
-  StringSliceNode,
-} from './string';
-import { RuntimeLogNode, RuntimeOutputNode } from './runtime';
 import { CurrentIndexLogicNode } from './logic/currentIndex';
 import { ForLoopLogicNode } from './logic/forLoop';
 import { BranchLogicNode } from './logic/branch';
 import { LogicCompareNode } from './logic/compare';
-import { CreatePropertyObjectNode } from './object/property';
+import { AndBooleanMathNode } from './boolean/gates/and';
+import { XNorBooleanMathNode } from './boolean/gates/nxor';
+import { NotBooleanMathNode } from './boolean/gates/not';
+import { OrBooleanMathNode } from './boolean/gates/or';
+import { XOrBooleanMathNode } from './boolean/gates/xor';
+import { NandBooleanMathNode } from './boolean/gates/nand';
+import { NorBooleanMathNode } from './boolean/gates/nor';
+import { BooleanValueNode } from './boolean/value';
+import { MultiplyMathNode } from './number/math/multiply';
+import { SubtractMathNode } from './number/math/subtract';
+import { NumberValueNode } from './number/value';
+import { DivideMathNode } from './number/math/divide';
+import { AddMathNode } from './number/math/add';
+import { ObjectValueNode } from './object/value';
+import { CreateObjectPropertyNode } from './object/property/create';
+import { RuntimeOutputNode } from './runtime/output';
+import { RuntimeLogNode } from './runtime/log';
+import { StringValueNode } from './string/value';
+import { StringPrependNode } from './string/methods/prepend';
+import { StringDeleteNode } from './string/methods/delete';
+import { StringAppendNode } from './string/methods/append';
+import { StringDeleteAtNode } from './string/methods/deleteAt';
+import { StringSliceNode } from './string/methods/slice';
+import { StringLengthNode } from './string/methods/length';
+import { StringReplaceNode } from './string/methods/replace';
+import { StringJoinNode } from './string/methods/join';
 
-const MathNodeKeys = [
+export const MathNodeKeys = [
   'math::add',
   'math::subtract',
   'math::multiply',
@@ -50,7 +43,7 @@ const ValueNodeKeys = [
   'value::boolean',
 ] as const;
 
-const BooleanMathNodeKeys = [
+export const BooleanMathNodeKeys = [
   'booleanmath::and',
   'booleanmath::or',
   'booleanmath::nand',
@@ -67,7 +60,7 @@ const GenericNodeKeys = [
   'generic::booleanmath',
 ] as const;
 
-const StringNodeKeys = [
+export const StringNodeKeys = [
   'string::length',
   'string::slice',
   'string::replace',
@@ -81,10 +74,10 @@ const StringNodeKeys = [
 export const RuntimeNodeKeys = ['runtime::output', 'runtime::log'] as const;
 
 export const LogicNodeKeys = [
-  'logic::currentindex',
-  'logic::forloop',
   'logic::branch',
   'logic::compare',
+  'logic::forloop',
+  'logic::currentindex',
 ] as const;
 
 export const ObjectNodeKeys = ['object::property::create'] as const;
@@ -129,7 +122,44 @@ export const NodeIndex = {
   'logic::forloop': ForLoopLogicNode,
   'logic::branch': BranchLogicNode,
   'logic::compare': LogicCompareNode,
-  'object::property::create': CreatePropertyObjectNode,
+  'object::property::create': CreateObjectPropertyNode,
+} as const;
+
+export const NodeTitles = {
+  'generic::node': 'Node',
+  'generic::value': 'Value',
+  'generic::math': 'Math',
+  'generic::booleanmath': 'Boolean Math',
+  'math::add': 'Add',
+  'math::subtract': 'Subtract',
+  'math::multiply': 'Multiply',
+  'math::divide': 'Divide',
+  'value::number': 'Number',
+  'value::string': 'String',
+  'value::object': 'Object',
+  'value::boolean': 'Boolean',
+  'booleanmath::and': 'And Gate',
+  'booleanmath::or': 'Or Gate',
+  'booleanmath::nand': 'Not And Gate',
+  'booleanmath::nor': 'Not Or Gate',
+  'booleanmath::xor': 'Exclusive Or Gate',
+  'booleanmath::xnor': 'Exclusive Not Or Gate',
+  'booleanmath::not': 'Not Gate',
+  'string::length': 'String Length',
+  'string::slice': 'Slice',
+  'string::replace': 'Replace',
+  'string::join': 'Join',
+  'string::append': 'Append',
+  'string::prepend': 'Prepend',
+  'string::delete': 'Delete',
+  'string::deleteat': 'Delete At',
+  'runtime::output': 'Output',
+  'runtime::log': 'Log To Console',
+  'logic::currentindex': 'Current Index',
+  'logic::forloop': 'For Loop',
+  'logic::branch': 'Branch',
+  'logic::compare': 'Compare',
+  'object::property::create': 'Create Property',
 } as const;
 
 export type AnyGenericNodeKey = typeof GenericNodeKeys[number];

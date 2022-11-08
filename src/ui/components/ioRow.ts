@@ -9,8 +9,9 @@ import {
 import { element } from '../../utils/document';
 import { Input } from './input';
 import { Toggle } from './toggle';
-import { cssSelectors } from './cssSelectors';
+import { cssSelectors } from '../cssSelectors';
 import { cssClass } from '../../utils/css';
+import { getSingleType } from '../../utils/data';
 
 export const createCardIoRow = (
   list: HTMLUListElement,
@@ -20,8 +21,11 @@ export const createCardIoRow = (
 ) => {
   const isOutput = io.kind === 'output';
 
-  const li = element<HTMLLIElement>('li');
-  li.classList.add('node__io__row');
+  const li = element<HTMLLIElement>(
+    'li',
+    cssSelectors.ioRow.ioRow,
+    cssSelectors.nodeCard.type(getSingleType(io.type)),
+  );
   li.id = cssSelectors.ioRow.id(node.id, io.id, isOutput);
   // inject io data
   storeIoInformation(li, io);
@@ -34,7 +38,6 @@ export const createCardIoRow = (
     cssSelectors.ioRow.connected,
     io.connection?.connected ?? false,
   );
-  li.classList.add(io.type.split('[]')[0]);
   const container = createIORowContainer(io, setIoValue);
   const indicator = createIoRowIndicator(io);
 
@@ -44,7 +47,11 @@ export const createCardIoRow = (
 };
 
 const createIoRowIndicator = (io: NodeIOWithId) => {
-  const indicator = element<HTMLDivElement>('div');
+  const indicator = element<HTMLDivElement>(
+    'div',
+    cssSelectors.ioRow.indicator,
+    cssSelectors.nodeCard.type(getSingleType(io.type)),
+  );
   indicator.classList.add(cssSelectors.ioRow.indicator);
   if (io.multi) {
     indicator.classList.add(cssSelectors.ioRow.multi);

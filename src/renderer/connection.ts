@@ -16,33 +16,32 @@ import {
 import { cssVar } from '../utils/css';
 import { NodeConnection } from '../runtime/runtime.types';
 import { svgElement } from '../utils/document';
+import { cssSelectors } from '../ui/cssSelectors';
 
 export const createConnectionSvg = () => {
-  const svg = svgElement<SVGSVGElement>('svg');
+  // generate svg gradients
+  const defs = svgElement<SVGDefsElement>('defs');
+  createAllConnectionGradients(defs);
+  // create groups to wrap all paths
+  const pathsGroup = svgElement<SVGGElement>('g');
+  const pendingConnectionGroup = svgElement<SVGGElement>('g');
+  pathsGroup.id = cssSelectors.renderer.connections.paths;
+  pendingConnectionGroup.id = cssSelectors.renderer.connections.pending;
+  // create and resize svg to wrap all elements
+  const svg = svgElement<SVGSVGElement>(
+    'svg',
+    cssSelectors.renderer.connections.root,
+  );
   resizeSvg(svg);
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.setAttribute('xmlns:svg', 'http://www.w3.org/2000/svg');
-  svg.classList.add('node__connection__root');
-  // create group to wrap all paths in
-  const defs = svgElement<SVGDefsElement>('defs');
-  createAllConnectionGradients(defs);
-  svg.appendChild(defs);
-  const pathsGroup = svgElement<SVGGElement>('g');
-  const pendingConnectionGroup = svgElement<SVGGElement>('g');
-  pathsGroup.id = 'node__connection__paths';
-  pendingConnectionGroup.id = 'node__connection__pending';
-  svg.append(pathsGroup, pendingConnectionGroup);
+  svg.append(defs, pathsGroup, pendingConnectionGroup);
   return svg;
 };
 
-type GradientColor = IOTypeName | 'white';
-
-const gradientId = (inputColor: GradientColor, outputColor: GradientColor) =>
-  `gradient__${inputColor}__${outputColor}`;
-
 const createConnectionGradient = (
-  inputColor: GradientColor,
-  outputColor: GradientColor,
+  inputColor: IOTypeName,
+  outputColor: IOTypeName,
 ) => {
   const gradient = svgElement<SVGLinearGradientElement>('linearGradient');
   const stop0 = svgElement<SVGStopElement>('stop');
@@ -53,18 +52,17 @@ const createConnectionGradient = (
   stop1.setAttribute('stop-color', cssVar(outputColor));
   gradient.append(stop0, stop1);
   // set unique id for gradient combination
-  gradient.id = gradientId(inputColor, outputColor);
+  gradient.id = cssSelectors.renderer.connections.gradientId(inputColor, outputColor);
   return gradient;
 };
 
 const createAllConnectionGradients = (defs: SVGDefsElement) => {
   // create all color combinations
   const gradients = [];
-  const types: GradientColor[] = [...IOTypeNames, 'white'];
-  for (let i = 0; i < types.length; i++) {
-    for (let j = 0; j < types.length; j++) {
-      const startColor = types[i];
-      const endColor = types[j];
+  for (let i = 0; i < IOTypeNames.length; i++) {
+    for (let j = 0; j < IOTypeNames.length; j++) {
+      const startColor = IOTypeNames[i];
+      const endColor = IOTypeNames[j];
       gradients.push(createConnectionGradient(startColor, endColor));
     }
   }
@@ -80,7 +78,7 @@ export const resizeSvg = (
 ) => {
   svg.style.width = size.width + 'px';
   svg.style.height = size.height + 'px';
-  svg.setAttribute('viewBox', `0 0 ${size.width} ${size.height}`);
+  svg.setAttribute('viewBox', `0 0 ${ size.width } ${ size.height }`);
 };
 
 export const getUniqueConnections = (nodes: NodeWithId[]): NodeConnection[] => {
@@ -172,21 +170,21 @@ export const getIOIndicatorPosition = (ioRow: HTMLLIElement): Vec2 => {
 const svgPath = (
   points: Vec2[],
   command: LineCommandFunction,
-  gradient = gradientId('white', 'white'),
+  gradient = cssSelectors.renderer.connections.gradientId('any', 'any'),
 ) => {
   // build the d attributes by looping over the points
   const d = points.reduce(
     (acc, point, i, a) =>
       i === 0
         ? // if first point
-        `M${point.x.toFixed(1)} ${point.y.toFixed(1)}`
+        `M${ point.x.toFixed(1) } ${ point.y.toFixed(1) }`
         : // else
-        `${acc} ${command(point, i, a)}`,
+        `${ acc } ${ command(point, i, a) }`,
     '',
   );
   const path = svgElement<SVGPathElement>('path');
   path.setAttribute('d', d);
-  path.setAttribute('stroke', `url('#${gradient}')`);
+  path.setAttribute('stroke', `url('#${ gradient }')`);
   path.setAttribute('stroke-width', '2');
   path.setAttribute('fill', 'none');
   return path;
@@ -212,15 +210,14 @@ export const svgBezierCommand =
         x: point.x - delta.x * s,
         y: point.y,
       };
-      return `C${startAnchor.x},${startAnchor.y} ${endAnchor.x},${endAnchor.y} ${point.x},${point.y}`;
+      return `C${ startAnchor.x },${ startAnchor.y } ${ endAnchor.x },${ endAnchor.y } ${ point.x },${ point.y }`;
     };
 
-export const getConnectionGradientId = (connection: RendererConnection) => {
-  return gradientId(
+export const getConnectionGradientId = (connection: RendererConnection) =>
+  cssSelectors.renderer.connections.gradientId(
     getSingleType(connection.outputNode.type),
     getSingleType(connection.inputNode.type),
   );
-};
 
 export const renderConnections = (
   connections: RendererConnection[],
@@ -228,7 +225,7 @@ export const renderConnections = (
 ) => {
   const paths = connections.map((c) =>
     svgPath(
-      [c.outputNode.position, c.inputNode.position],
+      [ c.outputNode.position, c.inputNode.position ],
       svgBezierCommand(0.35),
       getConnectionGradientId(c),
     ),
@@ -247,16 +244,16 @@ export const renderConnections = (
 export const renderPendingConnection = (
   startPos: Vec2,
   endPos: Vec2,
-  color: GradientColor,
+  color: IOTypeName,
   svg: SVGSVGElement,
 ) => {
   const pendingConnectionGroup = svg.querySelector(
     '#node__connection__pending',
   );
   const path = svgPath(
-    [startPos, endPos],
+    [ startPos, endPos ],
     svgBezierCommand(0.35),
-    gradientId(color, color),
+    cssSelectors.renderer.connections.gradientId(getSingleType(color), getSingleType(color)),
   );
   !!pendingConnectionGroup && pendingConnectionGroup.replaceChildren(path);
 };

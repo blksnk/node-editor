@@ -3,6 +3,11 @@
 .node__renderer__root {
   height: 100%;
   width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .node__card__root {
@@ -47,29 +52,7 @@
   margin-bottom: 0;
 
   &.node__category__value {
-    &.node__type__number {
-      --bg: var(--number);
-    }
-
-    &.node__type__object {
-      --bg: var(--object);
-    }
-
-    &.node__type__string {
-      --bg: var(--string);
-    }
-
-    &.node__type__boolean {
-      --bg: var(--boolean);
-    }
-
-    &.node__type__any {
-      --bg: var(--any);
-    }
-
-    &.node__type__property {
-      --bg: var(--property);
-    }
+    @include vars.type-var(--bg);
   }
 
   .node__card__title {
@@ -102,12 +85,11 @@
   }
 }
 
-
 .node__io__container {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: var(--unit) var(--unit-h);
+  padding: var(--unit) 0;
 }
 
 .node__io,
@@ -122,14 +104,15 @@
   align-items: center;
   gap: var(--unit-h);
   pointer-events: all;
-  padding: var(--unit-h) 0;
+  padding: var(--unit-h) calc(var(--unit) * 1.5);
+  margin: 0 calc(var(--unit-h) * -1 - 1px);
   height: var(--io-row-height);
+  position: relative;
 
   @include vars.type-var(--type);
 
   .node__io__row__container {
     flex-grow: 1;
-    //max-width: calc(100% - var(--unit-d));
     padding: var(--unit-hh);
     border-radius: 2px;
     height: 22px;
@@ -140,18 +123,25 @@
 
   &.node__io__output {
     justify-content: flex-end;
-    margin-right: var(--unit-n);
-    margin-left: var(--unit-hh);
+    //margin-right: var(--unit-n);
+    //margin-left: var(--unit-hh);
 
     &.node__io__editable .node__io__row__container {
       justify-content: space-between;
+    }
+
+    .node__io__indicator {
+      right: 0;
     }
   }
 
   &.node__io__input {
     justify-content: flex-start;
-    margin-left: var(--unit-n);
-    margin-right: var(--unit-h);
+    //margin-left: var(--unit-n);
+    //margin-right: var(--unit-h);
+    .node__io__indicator {
+      left: 0;
+    }
   }
 
   &:hover .node__io__indicator:not(.node__io__connected) {
@@ -159,7 +149,7 @@
   }
 
   &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input)
-  .node__io__row__container {
+    .node__io__row__container {
     background: var(--dark-grey);
 
     &:hover {
@@ -175,10 +165,13 @@
 .node__io__indicator {
   height: var(--unit);
   width: var(--unit);
+  min-width: var(--unit);
+  min-height: var(--unit);
   border: 1px solid var(--type);
   border-radius: var(--unit-h);
   background: var(--off-black);
   z-index: 11;
+  position: absolute;
 
   &.node__io__connected {
     background-color: var(--type);
@@ -222,8 +215,8 @@
   }
 }
 
-.node__connection__root {
-  position: absolute;
+.node__connections__root {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;

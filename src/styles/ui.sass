@@ -1,0 +1,106 @@
+@use './vars.scss'
+
+.ui__root
+  position: fixed
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  height: 100%
+  width: 100%
+  pointer-events: none
+
+.ui__panel
+  background: var(--off-black)
+  position: fixed
+  top: 0
+  bottom: 0
+  height: 100%
+  width: auto
+  min-width: 200px
+  z-index: 100
+  pointer-events: all
+  @include vars.flex-column(var(--unit-d))
+
+  &.ui__panel__left
+    left: 0
+
+  &.ui__panel__right
+    right: 0
+
+  .ui__panel__body
+    flex-grow: 1
+    width: 100%
+    padding: 0 var(--unit)
+    padding-bottom: var(--unit-d)
+    overflow-y: auto
+    @include vars.flex-column(var(--unit))
+
+.ui__panel__card
+  background: var(--black)
+  padding: var(--unit)
+  padding-bottom: var(--unit-d)
+  border-radius: calc(var(--unit) * 0.75)
+  width: 100%
+  @include vars.flex-column(var(--unit-d))
+
+  .ui__panel__card__header
+    @include vars.flex-row('flex-start')
+    gap: var(--unit-h)
+
+.ui__panel__nodes__category
+
+  .ui__panel__nodes__category__header
+    @include vars.flex-row()
+
+    .ui__panel__nodes__category__title
+      @include vars.node-category-title
+
+  .ui__panel__nodes__category__list
+    @include vars.flex-column(var(--unit))
+    width: 100%
+
+  .ui__node__create__card__root
+    @include vars.flex-column(0)
+    width: 100%
+    --bg: var(--dark-grey)
+    border: 1px solid var(--bg)
+    border-radius: var(--unit-h)
+    overflow: hidden
+
+    &.node__category__value
+      @include vars.type-var(--bg)
+
+    &.node__category__logic
+      --bg: var(--white-50)
+
+    &.node__category__runtime.node__type__output
+      --bg: var(--white)
+
+      h3
+        color: var(--off-black)
+
+      svg path
+        fill: var(--off-black)
+
+    .ui__node__create__card__button
+      @include vars.flex-row()
+      background: var(--bg)
+      width: 100%
+      padding: calc(var(--unit) - 1px)
+      padding-right: calc(var(--unit) * 0.75 - 1px)
+      height: 30px
+
+      h3
+        @include vars.node-title()
+
+      svg
+        path
+          fill-opacity: 0.5
+
+        &:hover path
+          fill-opacity: 1
+
+
+
+

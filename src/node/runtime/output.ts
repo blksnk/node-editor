@@ -1,7 +1,7 @@
-import { Node } from './node';
-import { defineNodeIO } from './defaults';
-import { IOType, IOTypeName, NodeIOWithId } from './node.types';
-import { isUndefined } from '../utils/data';
+import { Node } from '../node';
+import { defineNodeIO } from '../defaults';
+import { isUndefined } from '../../utils/data';
+import { IOType, IOTypeName, NodeIOWithId } from '../node.types';
 
 export class RuntimeOutputNode extends Node<['string', 'any'], []> {
   constructor() {
@@ -49,27 +49,5 @@ export class RuntimeOutputNode extends Node<['string', 'any'], []> {
     if (_ownIO.name === 'Value') {
       this.updateOwnValue(_ownIO.value, _ownIO.type);
     }
-  }
-}
-
-export class RuntimeLogNode extends Node<['any', 'string'], ['any']> {
-  constructor() {
-    super({
-      inputs: [
-        defineNodeIO('Value', 'any'),
-        defineNodeIO('Name', 'string', true, 'Log'),
-      ],
-      outputs: [defineNodeIO('Value', 'any')],
-      operation: ([value, name]) => {
-        console.log(`${name.value}: `, value);
-        return [value];
-      },
-    });
-    this.setupSelf({
-      title: 'Log to console',
-      category: 'runtime',
-      type: 'any',
-      kind: 'runtime::log',
-    });
   }
 }

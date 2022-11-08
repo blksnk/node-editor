@@ -13,7 +13,7 @@ import {
   NodeWithId,
 } from './node.types';
 import { isDefined, isMultiIO, isUndefined } from '../utils/data';
-import { AnyGenericNodeKey, AnyNodeKey } from './nodeIndex';
+import { AnyGenericNodeKey, AnyNodeKey, NodeTitles } from './nodeIndex';
 import { Runtime } from '../runtime/runtime';
 
 export class Node<
@@ -278,8 +278,9 @@ export class Node<
   }) {
     this.type = options.type ?? this.type;
     this.category = options.category ?? this.category;
-    this.title = options.title ?? this.title;
     this.kind = options.kind ?? this.kind;
+    this.title =
+      options.title ?? options.kind ?? NodeTitles[this.kind] ?? this.title;
   }
 
   protected executeConnectedNodes() {

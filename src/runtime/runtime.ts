@@ -18,7 +18,7 @@ import { getUniqueConnections } from '../renderer/connection';
 import { findById, getSingleType } from '../utils/data';
 import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
-import { RuntimeOutputNode } from '../node/runtime';
+import { RuntimeOutputNode } from '../node/runtime/output';
 
 export class Runtime {
   nodes: NodeWithId<IOTypeName[], IOTypeName[]>[] = [];
