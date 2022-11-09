@@ -28,22 +28,22 @@ import { StringSliceNode } from './string/methods/slice';
 import { StringLengthNode } from './string/methods/length';
 import { StringReplaceNode } from './string/methods/replace';
 import { StringJoinNode } from './string/methods/join';
+import { GetObjectPropertyNode } from './object/property/get';
+import { SetObjectPropertyNode } from './object/property/set';
+import { GetObjectPropertyValueNode } from './object/property/value';
+import { DeleteObjectPropertyNode } from './object/property/delete';
+import { ObjectMergeNode } from './object/merge';
 
-export const MathNodeKeys = [
+export const NumberNodeKeys = [
+  'value::number',
   'math::add',
   'math::subtract',
   'math::multiply',
   'math::divide',
 ] as const;
 
-const ValueNodeKeys = [
-  'value::number',
-  'value::string',
-  'value::object',
+export const BooleanNodeKeys = [
   'value::boolean',
-] as const;
-
-export const BooleanMathNodeKeys = [
   'booleanmath::and',
   'booleanmath::or',
   'booleanmath::nand',
@@ -61,6 +61,7 @@ const GenericNodeKeys = [
 ] as const;
 
 export const StringNodeKeys = [
+  'value::string',
   'string::length',
   'string::slice',
   'string::replace',
@@ -80,12 +81,19 @@ export const LogicNodeKeys = [
   'logic::currentindex',
 ] as const;
 
-export const ObjectNodeKeys = ['object::property::create'] as const;
+export const ObjectNodeKeys = [
+  'value::object',
+  'object::merge',
+  'object::property::create',
+  'object::property::get',
+  'object::property::set',
+  'object::property::value',
+  'object::property::delete',
+] as const;
 
 const AllNodeKeys = [
-  ...MathNodeKeys,
-  ...ValueNodeKeys,
-  ...BooleanMathNodeKeys,
+  ...NumberNodeKeys,
+  ...BooleanNodeKeys,
   ...StringNodeKeys,
   ...RuntimeNodeKeys,
   ...LogicNodeKeys,
@@ -123,43 +131,11 @@ export const NodeIndex = {
   'logic::branch': BranchLogicNode,
   'logic::compare': LogicCompareNode,
   'object::property::create': CreateObjectPropertyNode,
-} as const;
-
-export const NodeTitles = {
-  'generic::node': 'Node',
-  'generic::value': 'Value',
-  'generic::math': 'Math',
-  'generic::booleanmath': 'Boolean Math',
-  'math::add': 'Add',
-  'math::subtract': 'Subtract',
-  'math::multiply': 'Multiply',
-  'math::divide': 'Divide',
-  'value::number': 'Number',
-  'value::string': 'String',
-  'value::object': 'Object',
-  'value::boolean': 'Boolean',
-  'booleanmath::and': 'And Gate',
-  'booleanmath::or': 'Or Gate',
-  'booleanmath::nand': 'Not And Gate',
-  'booleanmath::nor': 'Not Or Gate',
-  'booleanmath::xor': 'Exclusive Or Gate',
-  'booleanmath::xnor': 'Exclusive Not Or Gate',
-  'booleanmath::not': 'Not Gate',
-  'string::length': 'String Length',
-  'string::slice': 'Slice',
-  'string::replace': 'Replace',
-  'string::join': 'Join',
-  'string::append': 'Append',
-  'string::prepend': 'Prepend',
-  'string::delete': 'Delete',
-  'string::deleteat': 'Delete At',
-  'runtime::output': 'Output',
-  'runtime::log': 'Log To Console',
-  'logic::currentindex': 'Current Index',
-  'logic::forloop': 'For Loop',
-  'logic::branch': 'Branch',
-  'logic::compare': 'Compare',
-  'object::property::create': 'Create Property',
+  'object::property::get': GetObjectPropertyNode,
+  'object::property::set': SetObjectPropertyNode,
+  'object::property::value': GetObjectPropertyValueNode,
+  'object::property::delete': DeleteObjectPropertyNode,
+  'object::merge': ObjectMergeNode,
 } as const;
 
 export type AnyGenericNodeKey = typeof GenericNodeKeys[number];

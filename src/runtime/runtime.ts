@@ -14,11 +14,11 @@ import {
   NodeConnectionBreak,
   RuntimeOutput,
 } from './runtime.types';
-import { getUniqueConnections } from '../renderer/connection';
-import { findById, getSingleType } from '../utils/data';
+import { findById, getSingleType, isAnyType } from '../utils/data';
 import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
 import { RuntimeOutputNode } from '../node/runtime/output';
+import { getUniqueConnections } from './connection';
 
 export class Runtime {
   nodes: NodeWithId<IOTypeName[], IOTypeName[]>[] = [];
@@ -63,8 +63,35 @@ export class Runtime {
   }
 
   updateConnections() {
-    this.connections = getUniqueConnections(this.nodes);
+    this.renderer.updateNodeCardNodes(this.nodes);
+    this.connections = this.breakInvalidConnections(
+      getUniqueConnections(this.nodes),
+    );
     this.renderer.updateConnections(this.connections);
+  }
+
+  breakInvalidConnections(connections: NodeConnection[]) {
+    return connections.filter((connection) => {
+      const types = [connection.inputNode.type, connection.outputNode.type];
+      const shouldStay =
+        getSingleType(types[0]) === getSingleType(types[1]) ||
+        types.some((t) => isAnyType(t));
+      if (!shouldStay) {
+        this.disconnectNodes({
+          inputNode: {
+            id: connection.inputNode.node.id,
+            ioId: connection.inputNode.ioId,
+            type: connection.inputNode.type,
+          },
+          outputNode: {
+            id: connection.outputNode.node.id,
+            ioId: connection.outputNode.ioId,
+            type: connection.outputNode.type,
+          },
+        });
+      }
+      return shouldStay;
+    });
   }
 
   createNode(k: AnyNodeKey, position?: Vec2) {
@@ -90,7 +117,7 @@ export class Runtime {
     return findById(this.outputs, query);
   }
 
-  connectNodes(connection: {
+  async connectNodes(connection: {
     outputNode: {
       id: number;
       ioId: number;
@@ -119,24 +146,27 @@ export class Runtime {
           type: outputIo.type,
         },
       })
-    )
+    ) {
       return;
+    }
+    const c = { ...connection };
 
-    inputNode.connectInput(
+    await inputNode.connectInput(
       outputNode,
-      connection.outputNode.ioId,
-      connection.inputNode.ioId,
+      c.outputNode.ioId,
+      c.inputNode.ioId,
     );
-    outputNode.connectOutput(
+    console.log(c);
+    await outputNode.connectOutput(
       inputNode,
-      connection.inputNode.ioId,
-      connection.outputNode.ioId,
+      c.inputNode.ioId,
+      c.outputNode.ioId,
     );
 
     this.updateConnections();
   }
 
-  breakConnection(connection: NodeConnectionBreak) {
+  disconnectNodes(connection: NodeConnectionBreak) {
     // break connections at node level, update runtime connections using object references
     const inputNode = findById(this.nodes, connection.inputNode.id);
     const outputNode = findById(this.nodes, connection.outputNode.id);
@@ -151,6 +181,11 @@ export class Runtime {
       connection.inputNode,
       'output',
     );
+  }
+
+  breakConnection(connection: NodeConnectionBreak) {
+    // break connections at node level, update runtime connections using object references
+    this.disconnectNodes(connection);
     this.updateConnections();
   }
 
@@ -169,7 +204,7 @@ export class Runtime {
     return typeValid && notSameNode;
   }
 
-  setNodeIoValue(
+  async setNodeIoValue(
     nodeId: number,
     ioId: number,
     value: DefinedIOType,
@@ -179,9 +214,9 @@ export class Runtime {
 
     valueSetter: {
       if (!node) break valueSetter;
-      node.setIoValue(ioId, value, kind);
-      this.renderer.updateCardIos();
+      await node.setIoValue(ioId, value, kind);
     }
+    this.updateConnections();
   }
 
   createOutput(node: {

@@ -1,34 +1,45 @@
 import {
   DefinedIOType,
-  DefinedIOTypeName,
+  IOType,
   IOTypeName,
   IOTypeNamesToNodeIOWithIds,
   NodeCategory,
+  NodeInitialOutputTypes,
   NodeIO,
   NodeIODefinition,
   NodeIoToNodeOperationArgument,
+  NodeIoToNodeOperationReturnValue,
   NodeIOWithId,
   NodeOperation,
+  NodeOperationReturnValue,
   NodeTypeName,
   NodeWithId,
 } from './node.types';
-import { isDefined, isMultiIO, isUndefined } from '../utils/data';
-import { AnyGenericNodeKey, AnyNodeKey, NodeTitles } from './nodeIndex';
+import {
+  findById,
+  isAnyType,
+  isDefined,
+  isMultiIO,
+  isUndefined,
+} from '../utils/data';
+import { AnyGenericNodeKey, AnyNodeKey } from './nodeIndex';
 import { Runtime } from '../runtime/runtime';
+import { NodeTitles } from './nodeTitles';
 
 export class Node<
-  InputTypeNames extends IOTypeName[] = DefinedIOTypeName[],
-  OutputTypeNames extends IOTypeName[] = DefinedIOTypeName[],
+  InputTypeNames extends IOTypeName[] = IOTypeName[],
+  OutputTypeNames extends IOTypeName[] = IOTypeName[],
 > {
   inputs: IOTypeNamesToNodeIOWithIds<InputTypeNames>;
   outputs: IOTypeNamesToNodeIOWithIds<OutputTypeNames>;
-  operation: NodeOperation<InputTypeNames, InputTypeNames>;
+  operation: NodeOperation<InputTypeNames, OutputTypeNames>;
   id?: number;
   title = 'Node';
   type: NodeTypeName = 'base';
   category: NodeCategory = 'base';
   kind: AnyNodeKey | AnyGenericNodeKey = 'generic::node';
   runtime?: Runtime;
+  initialOutputTypes: NodeInitialOutputTypes<OutputTypeNames>;
 
   constructor({
     inputs,
@@ -72,6 +83,12 @@ export class Node<
         connections: [],
       },
     }));
+
+    // store initial output types
+    this.initialOutputTypes = this.outputs.map(({ type, id }) => ({
+      initialType: type,
+      id,
+    })) as unknown as NodeInitialOutputTypes<OutputTypeNames>;
   }
 
   public async execute() {
@@ -82,16 +99,20 @@ export class Node<
     if (inputs.some(({ value }) => isUndefined(value))) return undefined;
 
     // run node operation
-    const results = await this.operation(
-      inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
-    );
+    const results: NodeIoToNodeOperationReturnValue<OutputTypeNames> =
+      await this.operation(
+        inputs as NodeIoToNodeOperationArgument<InputTypeNames>,
+      );
 
     // update node's outputted values
     const r = Array.isArray(results) ? results : [results];
-    r.forEach((result) => {
+    r.forEach((result: NodeOperationReturnValue<IOType, IOTypeName>) => {
       const index = this.outputs.findIndex(({ name }) => name === result.name);
       if (index < 0) return;
       this.outputs[index].value = result.value;
+      if (result.type === 'any' || result.type === 'any[]') {
+        this.outputs[index].type = result.tempType;
+      }
     });
     // return results for external consumption
     return r;
@@ -100,10 +121,10 @@ export class Node<
   public assignId(
     id: number,
     runtime: Runtime,
-  ): NodeWithId<InputTypeNames, InputTypeNames> {
+  ): NodeWithId<InputTypeNames, OutputTypeNames> {
     this.id = id;
     this.runtime = runtime;
-    return this as NodeWithId<InputTypeNames, InputTypeNames>;
+    return this as NodeWithId<InputTypeNames, OutputTypeNames>;
   }
 
   public getIo(query: string | number, kind: NodeIO['kind']) {
@@ -112,7 +133,7 @@ export class Node<
     );
   }
 
-  public connectInput(
+  public async connectInput(
     sourceNode: NodeWithId,
     sourceOutputId: number,
     targetInputQuery: string | number,
@@ -146,10 +167,10 @@ export class Node<
         ioId: sourceOutputId,
       });
     }
-    this.onOwnIOConnection(targetInput, sourceNodeOutput);
+    await this.onOwnIOConnection(targetInput, sourceNodeOutput);
   }
 
-  public connectOutput(
+  public async connectOutput(
     targetNode: NodeWithId,
     targetInputId: number,
     sourceOutputQuery: string | number,
@@ -162,7 +183,7 @@ export class Node<
       node: targetNode,
       ioId: targetInputId,
     });
-    this.onOwnIOConnection(sourceOutput, targetInput);
+    await this.onOwnIOConnection(sourceOutput, targetInput);
   }
 
   public disconnectIo(
@@ -179,7 +200,9 @@ export class Node<
       targetIo.connection.connections.splice(connectionIndex, 1);
     }
     targetIo.connection.connected = targetIo.connection.connections.length > 0;
-    this.onOwnInputDisconnection(targetIo);
+    if (kind === 'input') {
+      this.onOwnInputDisconnection(targetIo);
+    }
   }
 
   public async setIoValue(
@@ -194,7 +217,7 @@ export class Node<
       io.value = value;
       // update self and then nodes connected to own outputs
       if (executeConnected) {
-        this.executeConnectedNodes();
+        await this.executeConnectedNodes();
       }
     }
     return io;
@@ -207,8 +230,25 @@ export class Node<
     // );
     // update connected nodes on input connection change
     if (_ownIO.kind === 'input') {
-      this.executeConnectedNodes();
+      await this.executeConnectedNodes();
     }
+  }
+
+  public getOutputType = (query: string | number): IOTypeName | undefined => {
+    const output = this.getOutput(query);
+    if (!output) return undefined;
+    return output.type;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  protected async updateOutputTypes() {}
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-empty-function
+  protected resetOutputTypes() {
+    this.outputs.forEach((o) => {
+      const initial = findById(this.initialOutputTypes, o.id);
+      o.type = initial?.initialType ?? o.type;
+    });
   }
 
   protected async fetchInputValues() {
@@ -279,11 +319,14 @@ export class Node<
     this.type = options.type ?? this.type;
     this.category = options.category ?? this.category;
     this.kind = options.kind ?? this.kind;
-    this.title =
-      options.title ?? options.kind ?? NodeTitles[this.kind] ?? this.title;
+    this.title = options.title ?? NodeTitles[this.kind] ?? this.title;
   }
 
-  protected executeConnectedNodes() {
+  protected async executeConnectedNodes() {
+    if (this.inputs.length > 0) {
+      console.log(this.title, 'update output');
+      await this.updateOutputTypes();
+    }
     // console.log('executeConnectedNodes', this.title);
     // run node.execute() on nodes connected to own outputs for them to refresh internal values
     this.outputs.forEach((output) => {
@@ -297,6 +340,10 @@ export class Node<
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onOwnInputDisconnection(_ownIO: NodeIOWithId) {
+    // TODO: reset any overrided output types with initial types
+    if (isAnyType(_ownIO.type)) {
+      this.resetOutputTypes();
+    }
     // console.log('Disconnected own input ', _ownIO.id);
   }
 

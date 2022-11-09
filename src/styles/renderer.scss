@@ -18,7 +18,7 @@
   border-radius: var(--unit-h);
   background-color: var(--off-black);
   min-width: 200px;
-  //max-width: max-content;
+  width: 200px;
   max-width: 200px;
   transform: translate(var(--x-pos), var(--y-pos));
   z-index: 1;
@@ -148,7 +148,7 @@
     border-width: 3px;
   }
 
-  &.node__io__editable:not(.boolean):not(.object):not(.array):not(.node__io__connected.node__io__input)
+  &.node__io__editable:not(.node__type__boolean):not(.node__type__object):not(.node__type__array):not(.node__io__connected.node__io__input)
     .node__io__row__container {
     background: var(--dark-grey);
 

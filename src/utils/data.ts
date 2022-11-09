@@ -31,3 +31,6 @@ export const getSingleType = (
 
 export const isArrayType = (t: IOTypeName): t is IOArrayTypeName =>
   !!t.split('[]')[1];
+
+export const isAnyType = (t: IOTypeName): t is 'any' | 'any[]' =>
+  t === 'any' || t === 'any[]';

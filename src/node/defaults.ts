@@ -1,15 +1,18 @@
 import {
   DefinedIOType,
+  DefinedIOTypeName,
   IOType,
   IOTypeName,
-  NodeIODefinition,
+  ObjectIOType,
   PropertyIOType,
 } from './node.types';
 
 export const defaultValues = {
   number: (): number => 0,
   string: (): string => '',
-  object: (): Record<string, Exclude<unknown, undefined>> => ({}),
+  object: (): ObjectIOType => ({
+    __propTypes: {},
+  }),
   boolean: (): boolean => false,
   any: (): unknown => undefined,
   property: (): PropertyIOType<IOType, IOTypeName> => ({
@@ -21,9 +24,9 @@ export const defaultValues = {
   undef: () => undefined,
   'string[]': (): string[] => [],
   'number[]': (): number[] => [],
-  'object[]': (): Record<string, unknown>[] => [],
+  'object[]': (): ObjectIOType[] => [],
   'boolean[]': (): boolean[] => [],
-  'any[]': (): unknown[] => [],
+  'any[]': (): DefinedIOTypeName[] => [],
   'property[]': () => [],
 };
 
@@ -32,7 +35,7 @@ export const defineNodeIO = (
   type: IOTypeName,
   editable = false,
   defaultValue?: DefinedIOType,
-): NodeIODefinition => ({
+) => ({
   name,
   type,
   value: defaultValue ?? defaultValues[type](),

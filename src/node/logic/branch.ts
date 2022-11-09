@@ -6,8 +6,8 @@ export class BranchLogicNode extends Node<['boolean', 'any', 'any'], ['any']> {
     super({
       inputs: [
         defineNodeIO('Condition', 'boolean', true),
-        defineNodeIO('True', 'any', true),
-        defineNodeIO('False', 'any', true),
+        defineNodeIO('True', 'any'),
+        defineNodeIO('False', 'any'),
       ],
       outputs: [defineNodeIO('Result', 'any', false)],
       operation: ([condition, ifTrue, ifFalse]) => {
@@ -16,6 +16,7 @@ export class BranchLogicNode extends Node<['boolean', 'any', 'any'], ['any']> {
             name: 'False',
             type: 'any',
             value: condition.value ? ifTrue.value : ifFalse.value,
+            tempType: condition.value ? ifTrue.type : ifFalse.value,
           },
         ];
       },
@@ -26,5 +27,25 @@ export class BranchLogicNode extends Node<['boolean', 'any', 'any'], ['any']> {
       category: 'logic',
       kind: 'logic::branch',
     });
+  }
+
+  override async updateOutputTypes() {
+    await super.updateOutputTypes();
+    console.log('update output type');
+    const inputs = await this.fetchInputValues();
+    console.log(inputs);
+    const [condition, branchA, branchB] = inputs;
+    const output = this.getOutput(0);
+    if (!condition || !branchA || !branchB || !output) return;
+
+    // const bothSameType =
+    //   isDefined(branchA.type) &&
+    //   isDefined(branchB.type) &&
+    //   branchA.type === branchB.type;
+
+    output.type = condition.value ? branchA.type : branchB.type;
+    console.log(condition.value, output.type);
+
+    // if both connected inputs are of same type then update output with this type
   }
 }

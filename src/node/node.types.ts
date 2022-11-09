@@ -33,7 +33,7 @@ export type IOTypeMap<TN extends IOTypeName> = TN extends 'string'
   : TN extends 'number'
   ? number
   : TN extends 'object'
-  ? { [p: string]: IOType }
+  ? ObjectIOType
   : TN extends 'boolean'
   ? boolean
   : TN extends 'property'
@@ -43,14 +43,14 @@ export type IOTypeMap<TN extends IOTypeName> = TN extends 'string'
   : TN extends 'number[]'
   ? number[]
   : TN extends 'object[]'
-  ? Record<string, IOType>[]
+  ? ObjectIOType[]
   : TN extends 'boolean[]'
   ? boolean[]
   : TN extends 'property[]'
   ? PropertyIOType[]
   : TN extends 'any[]'
-  ? unknown[]
-  : unknown;
+  ? DefinedIOType[]
+  : DefinedIOType;
 
 export const NodeTypeNames = [...IOTypeNames, 'base'] as const;
 
@@ -65,7 +65,7 @@ export type IOTypeName = typeof IOTypeNames[number];
 export type DefinedIOTypeName = Exclude<IOTypeName, 'any' | 'any[]'>;
 
 export interface PropertyIOType<
-  T extends DefinedIOType = DefinedIOType,
+  T extends IOType = IOType,
   TN extends IOTypeName = IOTypeName,
 > {
   kind: 'property';
@@ -105,7 +105,7 @@ export type IOType = Exclude<
 >;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-export type DefinedIOType = Exclude<IOType, undefined>;
+export type DefinedIOType = Exclude<IOType, undefined, unknown>;
 
 export interface NodeIO<TN extends IOTypeName = IOTypeName> {
   name: string;
@@ -125,8 +125,8 @@ export interface NodeIO<TN extends IOTypeName = IOTypeName> {
 }
 
 export interface NodeOperationArgument<
-  T extends IOType = IOType,
-  TN extends IOTypeName = IOTypeName,
+  T extends IOType = DefinedIOType,
+  TN extends IOTypeName = DefinedIOTypeName,
 > {
   value: T;
   type: TN;
@@ -152,6 +152,22 @@ export type NodeIoToNodeOperationArgument<TN extends IOTypeName[]> = {
   [P in keyof TN]: NodeOperationArgument<IOTypeMap<TN[P]>, TN[P]>;
 };
 
+export type NodeOperationReturnValue<
+  T extends IOType = DefinedIOType,
+  TN extends IOTypeName = DefinedIOTypeName,
+> = TN extends 'any[]' | 'any'
+  ? {
+      value: T;
+      type: TN;
+      name: string;
+      tempType: IOTypeName;
+    }
+  : NodeOperationArgument<T, TN>;
+
+export type NodeIoToNodeOperationReturnValue<TN extends IOTypeName[]> = {
+  [P in keyof TN]: NodeOperationReturnValue<IOTypeMap<TN[P]>, TN[P]>;
+};
+
 export type IOTypeNamesToNodeIOWithIds<TN extends IOTypeName[]> = {
   [P in keyof TN]: NodeIOWithId<TN[P]>;
 };
@@ -162,8 +178,8 @@ export type NodeOperation<
 > = (
   inputs: NodeIoToNodeOperationArgument<TN>,
 ) =>
-  | NodeIoToNodeOperationArgument<OTN>
-  | Promise<NodeIoToNodeOperationArgument<OTN>>;
+  | NodeIoToNodeOperationReturnValue<OTN>
+  | Promise<NodeIoToNodeOperationReturnValue<OTN>>;
 
 export interface NodeWithId<
   ITN extends IOTypeName[] = IOTypeName[],
@@ -184,3 +200,12 @@ export interface NodeConnectionInfo {
   type: IOTypeName;
   nodeId: number;
 }
+
+export type NodeInitialOutputTypes<
+  OutputTypeNames extends IOTypeName[] = IOTypeName[],
+> = {
+  [P in keyof OutputTypeNames]: {
+    id: number;
+    initialType: OutputTypeNames[P];
+  };
+};

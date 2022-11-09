@@ -11,7 +11,7 @@ export class RuntimeLogNode extends Node<['any', 'string'], ['any']> {
       outputs: [defineNodeIO('Value', 'any')],
       operation: ([value, name]) => {
         console.log(`${name.value}: `, value);
-        return [value];
+        return [{ ...value, tempType: value.type }];
       },
     });
     this.setupSelf({

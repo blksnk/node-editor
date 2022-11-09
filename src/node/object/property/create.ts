@@ -33,7 +33,7 @@ export class CreateObjectPropertyNode extends Node<
     });
     this.setupSelf({
       title: 'Create Property',
-      type: 'object',
+      type: 'property',
       category: 'base',
       kind: 'object::property::create',
     });

@@ -1,7 +1,7 @@
 import { Node } from '../node';
 import { defineNodeIO } from '../defaults';
-import { NodeOperationArgument } from '../node.types';
-import { isUndefined } from '../../utils/data';
+import { IOType, IOTypeName, NodeOperationArgument } from '../node.types';
+import { isArrayType, isUndefined } from '../../utils/data';
 
 export class ForLoopLogicNode extends Node<
   ['number', 'number', 'any'],
@@ -34,18 +34,30 @@ export class ForLoopLogicNode extends Node<
         }
         const operationResults = [firstOperation, ...restOperations].map(
           ({ value, type }) => ({
-            value,
-            type,
+            value: value as IOType,
+            type: type as IOTypeName,
           }),
         );
 
         // reset current index start for successive executions
         this.resetCurrentIndex(start.value);
+
+        // get temp return type
+        // check if all operation results have same value;
+        const allSameType = operationResults.every(
+          ({ type }) => type === firstOperation.type,
+        );
+        const tempType = (
+          allSameType && !isArrayType(firstOperation.type)
+            ? firstOperation.type + '[]'
+            : 'any[]'
+        ) as IOTypeName;
         return [
           {
             name: 'Results',
             value: operationResults,
             type: 'any[]',
+            tempType,
           },
         ];
       },

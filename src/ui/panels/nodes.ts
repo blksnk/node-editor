@@ -7,10 +7,9 @@ import {
 } from '../uiManager.types';
 import {
   AnyNodeKey,
-  BooleanMathNodeKeys,
+  BooleanNodeKeys,
   LogicNodeKeys,
-  MathNodeKeys,
-  NodeTitles,
+  NumberNodeKeys,
   ObjectNodeKeys,
   RuntimeNodeKeys,
   StringNodeKeys,
@@ -18,6 +17,7 @@ import {
 import { Icon, IconNames } from '../components/icons';
 import { NodeCategory } from '../../node/node.types';
 import { createPanelCard, createPanelCardHeader } from './panelCard';
+import { NodeTitles } from '../../node/nodeTitles';
 
 export const createNodePanel = (
   dispatchCreateNode: (kind: AnyNodeKey) => void,
@@ -37,19 +37,19 @@ export const createNodePanel = (
 export const nodesRepository: NodeRepository = {
   Numbers: {
     title: 'Numbers',
-    nodes: ['value::number', ...MathNodeKeys],
+    nodes: NumberNodeKeys,
   },
   Booleans: {
     title: 'Booleans',
-    nodes: ['value::boolean', ...BooleanMathNodeKeys],
+    nodes: BooleanNodeKeys,
   },
   Strings: {
     title: 'Strings',
-    nodes: ['value::string', ...StringNodeKeys],
+    nodes: StringNodeKeys,
   },
   Objects: {
     title: 'Objects',
-    nodes: ['value::object', ...ObjectNodeKeys],
+    nodes: ObjectNodeKeys,
   },
   Arrays: {
     title: 'Arrays',
@@ -57,11 +57,11 @@ export const nodesRepository: NodeRepository = {
   },
   Logic: {
     title: 'Logic',
-    nodes: [...LogicNodeKeys],
+    nodes: LogicNodeKeys,
   },
   Runtime: {
     title: 'Runtime',
-    nodes: [...RuntimeNodeKeys],
+    nodes: RuntimeNodeKeys,
   },
 } as const;
 

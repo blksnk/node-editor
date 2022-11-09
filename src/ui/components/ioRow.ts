@@ -158,9 +158,12 @@ export const updateIoRow = (
 ) => {
   const isOutput = io.kind === 'output';
   const isConnected = io.connection?.connected ?? false;
-  if (isConnected) console.log(io);
+  const { type: previousType } = getIoInformation(row);
   // update row data attrs with updated data
   storeIoInformation(row, io);
+
+  const prevClassName = cssSelectors.nodeCard.type(previousType);
+  const updatedClassName = cssSelectors.nodeCard.type(io.type);
 
   // check if only value changed or if edit components should (dis)appear
   const shouldRendererEditComponent =
@@ -170,6 +173,7 @@ export const updateIoRow = (
   // update row visual elements and show / hide edit components
   row.classList.toggle(cssSelectors.ioRow.editable, io.editable);
   row.classList.toggle(cssSelectors.ioRow.connected, isConnected);
+  row.classList.replace(prevClassName, updatedClassName);
 
   const container = row.querySelector<HTMLDivElement>(
     cssClass(cssSelectors.ioRow.container),
@@ -179,7 +183,7 @@ export const updateIoRow = (
   );
   // if any child is missing, recreate io row content from scratch;
   if (container && indicator) {
-    updateIoRowIndicator(indicator, io);
+    updateIoRowIndicator(indicator, io, previousType);
     updateIoRowContainer(
       container,
       io,
@@ -242,8 +246,14 @@ export const updateIoRowContainer = (
 export const updateIoRowIndicator = (
   indicator: HTMLDivElement,
   io: NodeIOWithId,
+  previousType: IOTypeName,
 ) => {
   const isConnected = io.connection?.connected ?? false;
-  !!indicator &&
-    indicator.classList.toggle(cssSelectors.ioRow.connected, isConnected);
+  if (!indicator) return;
+  indicator.classList.toggle(cssSelectors.ioRow.connected, isConnected);
+  // update indicator type
+  // get previous type className
+  const prevClassName = cssSelectors.nodeCard.type(previousType);
+  const updatedClassName = cssSelectors.nodeCard.type(io.type);
+  indicator.classList.replace(prevClassName, updatedClassName);
 };

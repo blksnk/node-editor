@@ -16,11 +16,9 @@ import { clickPos, vecDelta } from '../utils/vectors';
 import {
   assignIoPositions,
   clearPendingConnection,
-  createConnectionSvg,
   getIOIndicatorPosition,
   renderConnections,
   renderPendingConnection,
-  resizeSvg,
 } from './connection';
 import { NodeConnection } from '../runtime/runtime.types';
 import { findById, isDefined } from '../utils/data';
@@ -34,11 +32,12 @@ import { getIoInformation } from '../ui/components/ioRow';
 import { KeyboardHandler } from '../keyboard/keyboard';
 import { element } from '../utils/document';
 import { cssSelectors } from '../ui/cssSelectors';
+import { createRendererSvg, resizeSvg } from './svg';
 
 export class Renderer {
   root: HTMLDivElement;
   target: RendererOptions['target'];
-  connectionRoot: SVGSVGElement;
+  svgRoot: SVGSVGElement;
   nodeCards: RendererNode[] = [];
   nodeConnections: RendererConnection[] = [];
   runtime: Runtime;
@@ -60,7 +59,7 @@ export class Renderer {
     this.runtime = options.runtime;
     this.keyboard = options.keyboard;
     this.root = element<HTMLDivElement>('div', cssSelectors.renderer.root);
-    this.connectionRoot = createConnectionSvg();
+    this.svgRoot = createRendererSvg();
     this.attachRoot();
     this.initGlobalEvents();
   }
@@ -115,13 +114,25 @@ export class Renderer {
   }
 
   public updateConnections(connections: NodeConnection[]) {
-    this.nodeConnections = assignIoPositions(connections, this.nodeCards);
     this.updateCardIos();
-    renderConnections(this.nodeConnections, this.connectionRoot);
+    this.updateConnectionCoords(connections);
+  }
+
+  public updateConnectionCoords(connections: NodeConnection[]) {
+    this.nodeConnections = assignIoPositions(connections, this.nodeCards);
+    renderConnections(this.nodeConnections, this.svgRoot);
   }
 
   public resetSelectedCards() {
     this.selectedCardIds.clear();
+  }
+
+  public unselectAllCards(e: PointerEvent) {
+    if (e.target === this.root) {
+      console.log('unselect all');
+      this.resetSelectedCards();
+      this.highlightSelectedCards();
+    }
   }
 
   public highlightSelectedCards() {
@@ -129,6 +140,16 @@ export class Renderer {
     this.nodeCards.forEach(({ id }) => {
       this.setCardHighlight(id, this.selectedCardIds.has(id));
     });
+  }
+
+  public updateNodeCardNodes(nodes: NodeWithId[]) {
+    nodes.forEach((node) => {
+      const nodeCard = this.findNodeCard(node.id);
+      if (nodeCard) {
+        nodeCard.node = node;
+      }
+    });
+    this.updateCardIos();
   }
 
   public updateCardIos() {
@@ -160,7 +181,7 @@ export class Renderer {
 
   private attachRoot() {
     this.target.appendChild(this.root);
-    this.root.appendChild(this.connectionRoot);
+    this.root.appendChild(this.svgRoot);
   }
 
   private initCardEvents({ io, header, card, id }: RendererNode) {
@@ -199,6 +220,7 @@ export class Renderer {
     window.addEventListener('pointerup', this.onGlobalUp.bind(this));
     window.addEventListener('pointermove', this.onGlobalMove.bind(this));
     window.addEventListener('resize', this.onWindowResize.bind(this));
+    this.root.addEventListener('pointerup', this.unselectAllCards.bind(this));
   }
 
   private findNodeCard(query: number) {
@@ -347,7 +369,7 @@ export class Renderer {
     this.pendingConnection.active = false;
     this.pendingConnection.inputNode = undefined;
     this.pendingConnection.outputNode = undefined;
-    clearPendingConnection(this.connectionRoot);
+    clearPendingConnection(this.svgRoot);
   }
 
   private onGlobalUp(e: PointerEvent) {
@@ -383,7 +405,7 @@ export class Renderer {
         startPos,
         endPos,
         connectionStart.type,
-        this.connectionRoot,
+        this.svgRoot,
       );
     }
   }
@@ -392,7 +414,7 @@ export class Renderer {
     nodeCard.position.x += delta.x;
     nodeCard.position.y += delta.y;
     setCardPosition(nodeCard.card, nodeCard.position);
-    this.runtime.updateConnections();
+    this.updateConnectionCoords(this.runtime.connections);
   }
 
   private onCardHeaderDown(e: PointerEvent) {
@@ -409,6 +431,6 @@ export class Renderer {
   }
 
   private onWindowResize() {
-    resizeSvg(this.connectionRoot);
+    resizeSvg(this.svgRoot);
   }
 }

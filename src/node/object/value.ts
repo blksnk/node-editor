@@ -9,19 +9,28 @@ export class ObjectValueNode extends Node<['property[]'], ['object']> {
       operation: ([properties]) => {
         // create object from properties
         const normalizePropName = (n: string) => n.replaceAll(' ', '_');
-        const object = Object.fromEntries(
-          properties.value.map((prop) => [
+        const object = Object.fromEntries([
+          ...properties.value.map((prop) => [
             normalizePropName(prop.name),
             prop.value,
           ]),
-        );
+          [
+            '__propTypes',
+            Object.fromEntries(
+              properties.value.map((prop) => [
+                normalizePropName(prop.name),
+                prop.type,
+              ]),
+            ),
+          ],
+        ]);
         // inject prop types
-        object.__propTypes = Object.fromEntries(
-          properties.value.map((prop) => [
-            normalizePropName(prop.name),
-            prop.type,
-          ]),
-        );
+        // object.__propTypes = Object.fromEntries(
+        //   properties.value.map((prop) => [
+        //     normalizePropName(prop.name),
+        //     prop.type,
+        //   ]),
+        // )
         return [
           {
             name: 'Object',
