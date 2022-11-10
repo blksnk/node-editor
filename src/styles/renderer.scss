@@ -215,7 +215,7 @@
   }
 }
 
-.node__connections__root {
+.node__svg__root {
   position: fixed;
   top: 0;
   left: 0;
@@ -228,6 +228,6 @@
   pointer-events: none;
 }
 
-.node__connection__root path {
+.node__svg__root path {
   z-index: 10;
 }

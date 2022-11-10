@@ -33,10 +33,9 @@ export const createCard = (
 
   const cardHeader = createCardHeader(node);
   card.appendChild(cardHeader);
-  const title = createCardTitle(node);
-  const helpButton = createCardHelpButton(node);
-  cardHeader.append(title, helpButton);
-  const io = createCardIO(card, node, setIoValue);
+
+  const io = createCardIO(node, setIoValue);
+  card.appendChild(io.ioContainer);
 
   return { card, cardHeader, ...io };
 };
@@ -47,6 +46,9 @@ export const createCardHeader = (node: NodeWithId) => {
   cardHeader.classList.add(cssSelectors.nodeCard.type(node.type));
   cardHeader.classList.add(cssSelectors.nodeCard.category(node.category));
 
+  const title = createCardTitle(node);
+  const helpButton = createCardHelpButton(node);
+  cardHeader.append(title, helpButton);
   return cardHeader;
 };
 
@@ -73,7 +75,6 @@ export const createCardHelpButton = (
 };
 
 export const createCardIO = (
-  card: HTMLElement,
   node: NodeWithId,
   setIoValue?: (
     ioId: number,
@@ -128,14 +129,14 @@ export const createCardIO = (
     );
     ioContainer.append(outputList);
   }
-  card.appendChild(ioContainer);
 
-  return { inputs, outputs };
+  return { inputs, outputs, ioContainer };
 };
 
 export const setCardPosition = (card: HTMLElement, position: Vec2) => {
-  card.style.setProperty('--x-pos', position.x + 'px');
-  card.style.setProperty('--y-pos', position.y + 'px');
+  const { width, height } = card.getBoundingClientRect();
+  card.style.setProperty('--x-pos', position.x - width / 2 + 'px');
+  card.style.setProperty('--y-pos', position.y - height / 2 + 'px');
 };
 
 export const updateCardIo = (

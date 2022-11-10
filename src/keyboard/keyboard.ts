@@ -17,31 +17,17 @@ export class KeyboardHandler {
     this.initEvents();
   }
 
-  initEvents = () => {
-    window.addEventListener('keydown', this.onKeyDown.bind(this));
-    window.addEventListener('keyup', this.onKeyUp.bind(this));
-  };
-
-  onKeyDown(e: KeyboardEvent) {
-    this.setMetaKeys(e);
-    this.setKey(e.key, true);
-    this.callListeners('keydown');
-  }
-
-  onKeyUp(e: KeyboardEvent) {
-    this.setMetaKeys(e);
-    this.setKey(e.key, false);
-    this.callListeners('keyup');
-  }
-
-  addListener(eventType: KeyboardEventType, callback: KeyboardEventCallback) {
+  public addListener(
+    eventType: KeyboardEventType,
+    callback: KeyboardEventCallback,
+  ) {
     this.listeners.push({
       eventType,
       callback,
     });
   }
 
-  removeListener(
+  public removeListener(
     eventType: KeyboardEventType,
     callback: KeyboardEventCallback,
   ) {
@@ -50,6 +36,23 @@ export class KeyboardHandler {
     );
     if (index < 0) return;
     this.listeners.splice(index, 1);
+  }
+
+  private initEvents = () => {
+    window.addEventListener('keydown', this.onKeyDown.bind(this));
+    window.addEventListener('keyup', this.onKeyUp.bind(this));
+  };
+
+  private onKeyDown(e: KeyboardEvent) {
+    this.setMetaKeys(e);
+    this.setKey(e.key, true);
+    this.callListeners('keydown');
+  }
+
+  private onKeyUp(e: KeyboardEvent) {
+    this.setMetaKeys(e);
+    this.setKey(e.key, false);
+    this.callListeners('keyup');
   }
 
   private setMetaKeys(e: KeyboardEvent) {

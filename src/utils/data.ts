@@ -34,3 +34,5 @@ export const isArrayType = (t: IOTypeName): t is IOArrayTypeName =>
 
 export const isAnyType = (t: IOTypeName): t is 'any' | 'any[]' =>
   t === 'any' || t === 'any[]';
+
+export const absoluteDiff = (a: number, b: number) => Math.abs(a - b);

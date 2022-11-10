@@ -11,13 +11,10 @@ export const createRendererSvg = () => {
   // create groups to wrap all paths
   const pathsGroup = svgElement<SVGGElement>('g');
   const pendingConnectionGroup = svgElement<SVGGElement>('g');
-  pathsGroup.id = cssSelectors.renderer.connections.paths;
-  pendingConnectionGroup.id = cssSelectors.renderer.connections.pending;
+  pathsGroup.id = cssSelectors.renderer.svg.paths;
+  pendingConnectionGroup.id = cssSelectors.renderer.svg.pending;
   // create and resize svg to wrap all elements
-  const svg = svgElement<SVGSVGElement>(
-    'svg',
-    cssSelectors.renderer.connections.root,
-  );
+  const svg = svgElement<SVGSVGElement>('svg', cssSelectors.renderer.svg.root);
   resizeSvg(svg);
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.setAttribute('xmlns:svg', 'http://www.w3.org/2000/svg');
@@ -40,7 +37,7 @@ export const resizeSvg = (
 export const svgPath = (
   points: Vec2[],
   command: LineCommandFunction,
-  gradient = cssSelectors.renderer.connections.gradientId('any', 'any'),
+  gradient = cssSelectors.renderer.svg.gradientId('any', 'any'),
 ) => {
   // build the d attributes by looping over the points
   const d = points.reduce(

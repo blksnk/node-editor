@@ -21,10 +21,7 @@ export const createConnectionGradient = (
   stop1.setAttribute('stop-color', cssVar(outputColor));
   gradient.append(stop0, stop1);
   // set unique id for gradient combination
-  gradient.id = cssSelectors.renderer.connections.gradientId(
-    inputColor,
-    outputColor,
-  );
+  gradient.id = cssSelectors.renderer.svg.gradientId(inputColor, outputColor);
   return gradient;
 };
 
@@ -86,7 +83,7 @@ export const getIOIndicatorPosition = (ioRow: HTMLLIElement): Vec2 => {
 };
 
 export const getConnectionGradientId = (connection: RendererConnection) =>
-  cssSelectors.renderer.connections.gradientId(
+  cssSelectors.renderer.svg.gradientId(
     getSingleType(connection.outputNode.type),
     getSingleType(connection.inputNode.type),
   );
@@ -125,7 +122,7 @@ export const renderPendingConnection = (
   const path = svgPath(
     [startPos, endPos],
     svgBezierCommand(0.35),
-    cssSelectors.renderer.connections.gradientId(
+    cssSelectors.renderer.svg.gradientId(
       getSingleType(color),
       getSingleType(color),
     ),

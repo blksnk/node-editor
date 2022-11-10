@@ -38,10 +38,11 @@ export const nodeCard = {
 
 export const renderer = {
   root: normalizeCssClass('node renderer root'),
-  connections: {
-    root: normalizeCssClass('node connections root'),
+  svg: {
+    root: normalizeCssClass('node svg root'),
     paths: normalizeCssClass('node connection paths'),
     pending: normalizeCssClass('node connection pending'),
+    selectionRect: normalizeCssClass('node selection rect'),
     gradientId: (inputColor: IOTypeName, outputColor: IOTypeName) =>
       normalizeCssClass(`gradient ${inputColor} ${outputColor}`),
   },

@@ -14,7 +14,13 @@ import {
   NodeConnectionBreak,
   RuntimeOutput,
 } from './runtime.types';
-import { findById, getSingleType, isAnyType } from '../utils/data';
+import {
+  findById,
+  getSingleType,
+  isAnyType,
+  isDefined,
+  isUndefined,
+} from '../utils/data';
 import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
 import { RuntimeOutputNode } from '../node/runtime/output';
@@ -76,7 +82,9 @@ export class Runtime {
       const shouldStay =
         getSingleType(types[0]) === getSingleType(types[1]) ||
         types.some((t) => isAnyType(t));
-      if (!shouldStay) {
+      const inputNode = this.findNode(connection.inputNode.node.id);
+      const outputNode = this.findNode(connection.outputNode.node.id);
+      if (!shouldStay || isUndefined(inputNode) || isUndefined(outputNode)) {
         this.disconnectNodes({
           inputNode: {
             id: connection.inputNode.node.id,
@@ -99,17 +107,45 @@ export class Runtime {
     this.registerNode(node, position);
   }
 
-  deleteNode(id: number) {
-    // get node
-    const node = this.getNode(id);
-    if (node === undefined) return;
-    // detach from renderer
-    this.renderer.detachNode(id);
-    // remove node from internal array
-    this.nodes.splice(this.nodes.indexOf(node), 1);
+  public deleteMultipleNodes(toDeleteIds: number[]) {
+    // deletes multiple nodes at once and updates connections once
+    const toDetachIds = toDeleteIds
+      .map((toDeleteId) => {
+        const nodeIndex = this.nodes.findIndex(({ id }) => toDeleteId === id);
+        if (nodeIndex < 0) return undefined;
+        // find any io connected to this node and disconnect its connection
+        const inputConnections = this.connections.filter(
+          (c) => c.inputNode.node.id === toDeleteId,
+        );
+        const outputConnections = this.connections.filter(
+          (c) => c.outputNode.node.id === toDeleteId,
+        );
+
+        inputConnections.forEach((c) => {
+          c.outputNode.node.disconnectIo(
+            c.outputNode.ioId,
+            { id: toDeleteId, ioId: c.inputNode.ioId },
+            'output',
+          );
+        });
+        outputConnections.forEach((c) => {
+          c.inputNode.node.disconnectIo(
+            c.inputNode.ioId,
+            { id: toDeleteId, ioId: c.outputNode.ioId },
+            'input',
+          );
+        });
+
+        this.nodes.splice(nodeIndex, 1);
+        return toDeleteId;
+      })
+      .filter((id) => isDefined(id)) as number[];
+
+    toDetachIds.forEach((id) => this.renderer.detachNode(id));
+    this.updateConnections();
   }
 
-  getNode(query: number) {
+  findNode(query: number) {
     return findById(this.nodes, query);
   }
 
@@ -127,8 +163,8 @@ export class Runtime {
       ioId: number;
     };
   }) {
-    const outputNode = this.getNode(connection.outputNode.id);
-    const inputNode = this.getNode(connection.inputNode.id);
+    const outputNode = this.findNode(connection.outputNode.id);
+    const inputNode = this.findNode(connection.inputNode.id);
     if (outputNode === undefined || inputNode === undefined) return;
 
     const inputIo = findById(inputNode.inputs, connection.inputNode.ioId);
@@ -156,7 +192,6 @@ export class Runtime {
       c.outputNode.ioId,
       c.inputNode.ioId,
     );
-    console.log(c);
     await outputNode.connectOutput(
       inputNode,
       c.inputNode.ioId,
@@ -170,17 +205,20 @@ export class Runtime {
     // break connections at node level, update runtime connections using object references
     const inputNode = findById(this.nodes, connection.inputNode.id);
     const outputNode = findById(this.nodes, connection.outputNode.id);
-    if (!inputNode || !outputNode) return;
-    inputNode.disconnectIo(
-      connection.inputNode.ioId,
-      connection.outputNode,
-      'input',
-    );
-    outputNode.disconnectIo(
-      connection.outputNode.ioId,
-      connection.inputNode,
-      'output',
-    );
+    if (inputNode) {
+      inputNode.disconnectIo(
+        connection.inputNode.ioId,
+        connection.outputNode,
+        'input',
+      );
+    }
+    if (outputNode) {
+      outputNode.disconnectIo(
+        connection.outputNode.ioId,
+        connection.inputNode,
+        'output',
+      );
+    }
   }
 
   breakConnection(connection: NodeConnectionBreak) {
@@ -210,7 +248,7 @@ export class Runtime {
     value: DefinedIOType,
     kind: NodeIO['kind'],
   ) {
-    const node = this.getNode(nodeId);
+    const node = this.findNode(nodeId);
 
     valueSetter: {
       if (!node) break valueSetter;

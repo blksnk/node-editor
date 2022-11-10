@@ -18,6 +18,9 @@ import { Icon, IconNames } from '../components/icons';
 import { NodeCategory } from '../../node/node.types';
 import { createPanelCard, createPanelCardHeader } from './panelCard';
 import { NodeTitles } from '../../node/nodeTitles';
+import { Vec2 } from '../../renderer/renderer.types';
+import { eventPos } from '../../utils/vectors';
+import { absoluteDiff } from '../../utils/data';
 
 export const createNodePanel = (
   dispatchCreateNode: (kind: AnyNodeKey) => void,
@@ -65,6 +68,28 @@ export const nodesRepository: NodeRepository = {
   },
 } as const;
 
+export const attachCreateNodeButtonEvent = (
+  button: HTMLButtonElement,
+  dispatchCreateNode: () => void,
+) => {
+  // only actually create node if pointer has moved a bit from button
+  let downPos: Vec2 = { x: 0, y: 0 };
+  let creationAllowed = false;
+  button.addEventListener('pointerdown', (e: PointerEvent) => {
+    creationAllowed = true;
+    downPos = eventPos(e);
+  });
+
+  button.addEventListener('pointermove', (e: PointerEvent) => {
+    const currentPos = eventPos(e);
+    const diff = absoluteDiff(downPos.x, currentPos.x);
+    if (diff > 20 && creationAllowed) {
+      creationAllowed = false;
+      dispatchCreateNode();
+    }
+  });
+};
+
 export const createNodeCardButton = (
   nodeKind: AnyNodeKey,
   dispatchCreateNode: () => void,
@@ -86,7 +111,7 @@ export const createNodeCardButton = (
 
   nodeTitle.innerText = title;
   button.append(nodeTitle, Icon('help'));
-  button.addEventListener('click', dispatchCreateNode);
+  attachCreateNodeButtonEvent(button, dispatchCreateNode);
   li.append(button);
   return li;
 };

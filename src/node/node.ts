@@ -187,11 +187,12 @@ export class Node<
   }
 
   public disconnectIo(
-    ownId: number,
+    ownIoId: number,
     connectionInfo: { id: number; ioId: number },
     kind: 'input' | 'output',
   ) {
-    const targetIo = this.getIo(ownId, kind);
+    const targetIo = this.getIo(ownIoId, kind);
+    console.log(targetIo?.name);
     if (!targetIo) return;
     const connectionIndex = targetIo.connection.connections.findIndex(
       (c) => c.node.id === connectionInfo.id && c.ioId === connectionInfo.ioId,

@@ -12,7 +12,7 @@ import {
   NodeWithId,
 } from '../node/node.types';
 import { Runtime } from '../runtime/runtime';
-import { clickPos, vecDelta } from '../utils/vectors';
+import { eventPos, vecDelta } from '../utils/vectors';
 import {
   assignIoPositions,
   clearPendingConnection,
@@ -62,6 +62,7 @@ export class Renderer {
     this.svgRoot = createRendererSvg();
     this.attachRoot();
     this.initGlobalEvents();
+    this.initKeyboardEvents();
   }
 
   private get movingNodeCards(): RendererNode[] {
@@ -70,13 +71,10 @@ export class Renderer {
       .filter((card) => !!card) as RendererNode[];
   }
 
-  public attachNode(
-    node: NodeWithId,
-    position: Vec2 = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 3,
-    },
-  ) {
+  public attachNode(node: NodeWithId, position: Vec2 = this.mousePos) {
+    // unselect any cards before attaching new node
+    this.resetSelectedCards();
+
     // create node card and attach it to dom
     const { card, cardHeader, inputs, outputs } = createCard(
       node,
@@ -85,6 +83,7 @@ export class Renderer {
         this.runtime.setNodeIoValue(node.id, ioId, value, kind),
     );
     this.root.appendChild(card);
+    setCardPosition(card, position);
     const rendererNode = {
       card,
       node,
@@ -98,7 +97,12 @@ export class Renderer {
     };
     this.initCardEvents(rendererNode);
     this.nodeCards.push(rendererNode);
-    this.runtime.updateConnections();
+    // newly attached card follows mouse for placement
+    this.selectedCardIds.add(rendererNode.id);
+    this.highlightSelectedCards();
+    this.mouseDown = true;
+    this.cardMoving = true;
+    this.hasMoved = true;
   }
 
   public detachNode(id: number) {
@@ -223,6 +227,17 @@ export class Renderer {
     this.root.addEventListener('pointerup', this.unselectAllCards.bind(this));
   }
 
+  private initKeyboardEvents() {
+    this.keyboard.addListener('keydown', (e) => {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        this.deleteSelectedCards();
+      }
+      if ((e.ctrl || e.meta) && (e.key === 'a' || e.key === 'A')) {
+        this.selectAllCards();
+      }
+    });
+  }
+
   private findNodeCard(query: number) {
     return findById(this.nodeCards, query);
   }
@@ -244,7 +259,7 @@ export class Renderer {
 
   private onInputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
-    const pos = clickPos(e);
+    const pos = eventPos(e);
     this.mouseDown = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
@@ -307,7 +322,7 @@ export class Renderer {
 
   private onInputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
-    this.mousePos = clickPos(e);
+    this.mousePos = eventPos(e);
     const info = getIoInformation(el);
     // only allow connection between input and output nodes, not both of same kind
     if (this.pendingConnection.active && this.pendingConnection.outputNode) {
@@ -318,7 +333,7 @@ export class Renderer {
 
   private onOutputDown(e: PointerEvent, el: HTMLLIElement) {
     e.stopPropagation();
-    const pos = clickPos(e);
+    const pos = eventPos(e);
     this.mouseDown = true;
     this.mouseDownPos = pos;
     this.mousePos = pos;
@@ -342,7 +357,7 @@ export class Renderer {
 
   private onOutputUp(e: PointerEvent, el: HTMLLIElement) {
     this.mouseDown = false;
-    this.mousePos = clickPos(e);
+    this.mousePos = eventPos(e);
     const info = getIoInformation(el);
     // only allow connection between input and output nodes, not both of same kind
     if (this.pendingConnection.active && this.pendingConnection.inputNode) {
@@ -376,13 +391,13 @@ export class Renderer {
     this.mouseDown = false;
     this.cardMoving = false;
     this.hasMoved = false;
-    this.mousePos = clickPos(e);
+    this.mousePos = eventPos(e);
     this.resetPendingConnection();
   }
 
   private onGlobalMove(e: PointerEvent) {
     const lastMousePos = { ...this.mousePos };
-    this.mousePos = clickPos(e);
+    this.mousePos = eventPos(e);
     const delta = vecDelta(this.mousePos, lastMousePos);
     // handle card move
     if (this.selectedCardIds.size > 0 && this.mouseDown && this.cardMoving) {
@@ -418,7 +433,7 @@ export class Renderer {
   }
 
   private onCardHeaderDown(e: PointerEvent) {
-    const pos = clickPos(e);
+    const pos = eventPos(e);
     this.mouseDown = true;
     this.cardMoving = true;
     this.mouseDownPos = pos;
@@ -432,5 +447,19 @@ export class Renderer {
 
   private onWindowResize() {
     resizeSvg(this.svgRoot);
+  }
+
+  private deleteSelectedCards() {
+    console.log(this.selectedCardIds, this.movingNodeCards);
+    this.runtime.deleteMultipleNodes([...this.selectedCardIds]);
+    this.resetSelectedCards();
+    this.highlightSelectedCards();
+  }
+
+  private selectAllCards() {
+    this.nodeCards.forEach(({ id }) => {
+      this.selectedCardIds.add(id);
+    });
+    this.highlightSelectedCards();
   }
 }
