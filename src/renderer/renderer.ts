@@ -441,7 +441,7 @@ export class Renderer {
     this.duplicateCardCreated = true;
     // create new cards based on source cards kind and position
     const duplicatedNodes = this.movingNodeCards.map(({ node, position }) =>
-      this.runtime.createNode(node.kind as AnyNodeKey, position),
+      this.runtime.createNode(node.kind as AnyNodeKey, { ...position }),
     );
     // select all newly created node cards
     this.resetSelectedCards();
