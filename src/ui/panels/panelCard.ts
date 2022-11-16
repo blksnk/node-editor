@@ -1,10 +1,17 @@
 import { element } from '../../utils/document';
 import { cssSelectors } from '../cssSelectors';
 
-export const createPanelCardHeader = (
-  children: Node[] = [],
-  ...classNames: string[]
-) => {
+export const PanelCard = (children: Node[] = [], ...classNames: string[]) => {
+  const card = element<HTMLElement>(
+    'article',
+    cssSelectors.ui.panelCard.root,
+    ...classNames,
+  );
+  card.append(...children);
+  return card;
+};
+
+export const Header = (children: Node[] = [], ...classNames: string[]) => {
   const header = element<HTMLElement>(
     'header',
     cssSelectors.ui.panelCard.header,
@@ -14,15 +21,15 @@ export const createPanelCardHeader = (
   return header;
 };
 
-export const createPanelCard = (
-  children: Node[] = [],
-  ...classNames: string[]
-) => {
-  const card = element<HTMLElement>(
-    'article',
-    cssSelectors.ui.panelCard.root,
+export const Title = (text: string, ...classNames: string[]) => {
+  const title = element<HTMLHeadingElement>(
+    'h2',
+    cssSelectors.ui.panelCard.title,
     ...classNames,
   );
-  card.append(...children);
-  return card;
+  title.innerText = text;
+  return title;
 };
+
+PanelCard.Header = Header;
+PanelCard.Title = Title;
