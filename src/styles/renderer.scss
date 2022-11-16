@@ -24,6 +24,7 @@
   overflow: visible;
   transform: scale(var(--zoom-factor));
   transform-origin: center center;
+  pointer-events: none;
 }
 
 .node__card__root {
