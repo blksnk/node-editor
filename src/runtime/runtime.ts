@@ -142,8 +142,12 @@ export class Runtime {
             'input',
           );
         });
-
+        // check if is output node and delete from output array if such
+        const isOutput = this.nodes[nodeIndex].kind === 'runtime::output';
+        if (isOutput) this.deleteOutput(toDeleteId);
+        // delete from nodes array
         this.nodes.splice(nodeIndex, 1);
+
         return toDeleteId;
       })
       .filter((id) => isDefined(id)) as number[];
@@ -264,17 +268,24 @@ export class Runtime {
     this.updateConnections();
   }
 
-  createOutput(node: {
+  createOutput(output: {
     id: number;
     name: string;
     type: IOTypeName;
     value: IOType;
   }) {
-    this.outputs.push({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      value: node.value,
+    this.outputs.push(output);
+    this.uiManager.update({
+      outputs: this.outputs,
+    });
+  }
+
+  deleteOutput(outputId: number) {
+    const outputIndex = this.outputs.findIndex(({ id }) => outputId === id);
+    if (outputIndex < 0) return;
+    this.outputs.splice(outputIndex, 1);
+    this.uiManager.update({
+      outputs: this.outputs,
     });
   }
 
@@ -288,5 +299,8 @@ export class Runtime {
     output.name = updatePayload.name ?? output.name;
     output.value = updatePayload.value ?? output.value;
     output.type = updatePayload.type ?? output.type;
+    this.uiManager.update({
+      outputs: this.outputs,
+    });
   }
 }
