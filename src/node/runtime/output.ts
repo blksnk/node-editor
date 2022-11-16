@@ -1,7 +1,13 @@
 import { Node } from '../node';
 import { defineNodeIO } from '../defaults';
 import { isUndefined } from '../../utils/data';
-import { IOType, IOTypeName, NodeIOWithId } from '../node.types';
+import {
+  DefinedIOType,
+  IOType,
+  IOTypeName,
+  NodeIO,
+  NodeIOWithId,
+} from '../node.types';
 
 export class RuntimeOutputNode extends Node<['string', 'any'], []> {
   constructor() {
@@ -12,7 +18,6 @@ export class RuntimeOutputNode extends Node<['string', 'any'], []> {
       ],
       outputs: [],
       operation: ([name, value]) => {
-        console.log(value);
         this.updateOwnName(name.value);
         this.updateOwnValue(value.value, value.type);
         return [];
@@ -49,5 +54,17 @@ export class RuntimeOutputNode extends Node<['string', 'any'], []> {
     if (_ownIO.name === 'Value') {
       this.updateOwnValue(_ownIO.value, _ownIO.type);
     }
+  }
+
+  async setIoValue(
+    ioId: number,
+    value: DefinedIOType,
+    kind: NodeIO['kind'],
+    executeConnected = true,
+  ): Promise<NodeIOWithId | undefined> {
+    if (ioId === 0 && typeof value === 'string') {
+      this.updateOwnName(value);
+    }
+    return super.setIoValue(ioId, value, kind, executeConnected);
   }
 }
