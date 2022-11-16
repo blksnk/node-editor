@@ -25,6 +25,7 @@ import { Vec2 } from '../renderer/renderer.types';
 import { KeyboardHandler } from '../keyboard/keyboard';
 import { RuntimeOutputNode } from '../node/runtime/output';
 import { getUniqueConnections } from './connection';
+import { UIManager } from '../ui/uiManager';
 
 export class Runtime {
   nodes: NodeWithId<IOTypeName[], IOTypeName[]>[] = [];
@@ -32,6 +33,7 @@ export class Runtime {
   outputs: RuntimeOutput[] = [];
   nextNodeId = 0;
   renderer: Renderer;
+  uiManager: UIManager;
   keyboard: KeyboardHandler;
 
   constructor() {
@@ -40,6 +42,10 @@ export class Runtime {
       target: document.body,
       runtime: this,
       keyboard: this.keyboard,
+    });
+    this.uiManager = new UIManager({
+      runtime: this,
+      target: document.body,
     });
   }
 
