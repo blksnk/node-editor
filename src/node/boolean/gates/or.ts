@@ -18,7 +18,7 @@ export class OrBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'Or Gate',
-      kind: 'booleanmath::or',
+      kind: 'boolean::math::or',
     });
   }
 }
