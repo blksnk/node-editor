@@ -8,13 +8,17 @@ export const Input = <T extends 'number' | 'string'>(
   type: T,
   onChange?: (v: StringOrNumber<T>) => void,
   value?: T extends 'number' ? number : string,
+  placeholder?: string,
 ) => {
   const input = element<HTMLInputElement>('input');
   input.type = type;
   input.value = String(value ?? '');
-
   input.classList.add('ui__input');
-  input.placeholder = type === 'number' ? '1.0' : 'Hello World';
+  input.placeholder = placeholder ?? (type === 'number' ? '1.0' : 'Content');
+
+  input.addEventListener('click', () => {
+    input.select();
+  });
 
   input.addEventListener('input', (e) => {
     const { value } = e.target as HTMLInputElement;
