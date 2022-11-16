@@ -18,7 +18,7 @@ export class NandBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'Not And Gate',
-      kind: 'booleanmath::nand',
+      kind: 'boolean::math::nand',
     });
   }
 }

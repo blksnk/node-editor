@@ -18,7 +18,7 @@ export class XOrBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'Exclusive Or Gate',
-      kind: 'booleanmath::xor',
+      kind: 'boolean::math::xor',
     });
   }
 }

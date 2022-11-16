@@ -6,7 +6,7 @@ export class StringValueNode extends ValueNode<string, 'string'> {
     super(defaultValues.string(), 'string');
     this.setupSelf({
       type: 'string',
-      kind: 'value::string',
+      kind: 'string::value',
     });
   }
 }

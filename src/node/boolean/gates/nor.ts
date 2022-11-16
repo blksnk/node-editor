@@ -18,7 +18,7 @@ export class NorBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'Not Or Gate',
-      kind: 'booleanmath::nor',
+      kind: 'boolean::math::nor',
     });
   }
 }

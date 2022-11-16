@@ -33,24 +33,28 @@ import { SetObjectPropertyNode } from './object/property/set';
 import { GetObjectPropertyValueNode } from './object/property/value';
 import { DeleteObjectPropertyNode } from './object/property/delete';
 import { ObjectMergeNode } from './object/merge';
+import { MathAbsoluteNode } from './number/math/absolute';
+import { MathInvertNode } from './number/math/invert';
 
 export const NumberNodeKeys = [
-  'value::number',
-  'math::add',
-  'math::subtract',
-  'math::multiply',
-  'math::divide',
+  'number::value',
+  'number::math::add',
+  'number::math::subtract',
+  'number::math::multiply',
+  'number::math::divide',
+  'number::math::invert',
+  'number::math::absolute',
 ] as const;
 
 export const BooleanNodeKeys = [
-  'value::boolean',
-  'booleanmath::and',
-  'booleanmath::or',
-  'booleanmath::nand',
-  'booleanmath::nor',
-  'booleanmath::xor',
-  'booleanmath::xnor',
-  'booleanmath::not',
+  'boolean::value',
+  'boolean::math::and',
+  'boolean::math::or',
+  'boolean::math::nand',
+  'boolean::math::nor',
+  'boolean::math::xor',
+  'boolean::math::xnor',
+  'boolean::math::not',
 ] as const;
 
 const GenericNodeKeys = [
@@ -61,7 +65,7 @@ const GenericNodeKeys = [
 ] as const;
 
 export const StringNodeKeys = [
-  'value::string',
+  'string::value',
   'string::length',
   'string::slice',
   'string::replace',
@@ -82,7 +86,7 @@ export const LogicNodeKeys = [
 ] as const;
 
 export const ObjectNodeKeys = [
-  'value::object',
+  'object::value',
   'object::merge',
   'object::property::create',
   'object::property::get',
@@ -101,21 +105,23 @@ const AllNodeKeys = [
 ] as const;
 
 export const NodeIndex = {
-  'math::add': AddMathNode,
-  'math::subtract': SubtractMathNode,
-  'math::multiply': MultiplyMathNode,
-  'math::divide': DivideMathNode,
-  'value::number': NumberValueNode,
-  'value::string': StringValueNode,
-  'value::object': ObjectValueNode,
-  'value::boolean': BooleanValueNode,
-  'booleanmath::and': AndBooleanMathNode,
-  'booleanmath::or': OrBooleanMathNode,
-  'booleanmath::nand': NandBooleanMathNode,
-  'booleanmath::nor': NorBooleanMathNode,
-  'booleanmath::xor': XOrBooleanMathNode,
-  'booleanmath::xnor': XNorBooleanMathNode,
-  'booleanmath::not': NotBooleanMathNode,
+  'number::math::add': AddMathNode,
+  'number::math::subtract': SubtractMathNode,
+  'number::math::multiply': MultiplyMathNode,
+  'number::math::divide': DivideMathNode,
+  'number::math::absolute': MathAbsoluteNode,
+  'number::math::invert': MathInvertNode,
+  'number::value': NumberValueNode,
+  'string::value': StringValueNode,
+  'object::value': ObjectValueNode,
+  'boolean::value': BooleanValueNode,
+  'boolean::math::and': AndBooleanMathNode,
+  'boolean::math::or': OrBooleanMathNode,
+  'boolean::math::nand': NandBooleanMathNode,
+  'boolean::math::nor': NorBooleanMathNode,
+  'boolean::math::xor': XOrBooleanMathNode,
+  'boolean::math::xnor': XNorBooleanMathNode,
+  'boolean::math::not': NotBooleanMathNode,
   'string::length': StringLengthNode,
   'string::slice': StringSliceNode,
   'string::replace': StringReplaceNode,

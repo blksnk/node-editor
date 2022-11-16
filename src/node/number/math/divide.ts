@@ -19,7 +19,7 @@ export class DivideMathNode extends MathNode {
     super(operation);
     this.setupSelf({
       title: 'Divide',
-      kind: 'math::divide',
+      kind: 'number::math::divide',
     });
   }
 }

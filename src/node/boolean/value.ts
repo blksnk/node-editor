@@ -6,7 +6,7 @@ export class BooleanValueNode extends ValueNode<boolean, 'boolean'> {
     super(defaultValues.boolean(), 'boolean');
     this.setupSelf({
       type: 'boolean',
-      kind: 'value::boolean',
+      kind: 'boolean::value',
     });
   }
 }

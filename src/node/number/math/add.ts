@@ -19,7 +19,7 @@ export class AddMathNode extends MathNode {
     super(operation);
     this.setupSelf({
       title: 'Add',
-      kind: 'math::add',
+      kind: 'number::math::add',
     });
   }
 }

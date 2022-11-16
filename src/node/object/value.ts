@@ -42,7 +42,7 @@ export class ObjectValueNode extends Node<['property[]'], ['object']> {
     });
     this.setupSelf({
       title: 'Object',
-      kind: 'value::object',
+      kind: 'object::value',
       type: 'object',
       category: 'value',
     });

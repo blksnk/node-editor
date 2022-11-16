@@ -6,7 +6,7 @@ export class NumberValueNode extends ValueNode<number, 'number'> {
     super(defaultValues.number(), 'number');
     this.setupSelf({
       type: 'number',
-      kind: 'value::number',
+      kind: 'number::value',
     });
   }
 }

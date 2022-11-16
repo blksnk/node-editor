@@ -18,7 +18,7 @@ export class XNorBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'Exclusive Nor Gate',
-      kind: 'booleanmath::xnor',
+      kind: 'boolean::math::xnor',
     });
   }
 }

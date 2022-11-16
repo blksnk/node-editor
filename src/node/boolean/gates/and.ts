@@ -18,7 +18,7 @@ export class AndBooleanMathNode extends BooleanMathNode {
     super(operation);
     this.setupSelf({
       title: 'And Gate',
-      kind: 'booleanmath::and',
+      kind: 'boolean::math::and',
     });
   }
 }

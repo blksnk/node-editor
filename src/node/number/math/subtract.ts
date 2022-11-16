@@ -19,7 +19,7 @@ export class SubtractMathNode extends MathNode {
     super(operation);
     this.setupSelf({
       title: 'Subtract',
-      kind: 'math::subtract',
+      kind: 'number::math::subtract',
     });
   }
 }

@@ -37,9 +37,9 @@ export class NotBooleanMathNode extends Node<
     });
     this.setupSelf({
       type: 'boolean',
-      category: 'booleanMath',
+      category: 'boolean',
       title: 'Not Gate',
-      kind: 'booleanmath::not',
+      kind: 'boolean::math::not',
     });
   }
 }

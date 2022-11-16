@@ -19,7 +19,7 @@ export class MultiplyMathNode extends MathNode {
     super(operation);
     this.setupSelf({
       title: 'Multiply',
-      kind: 'math::multiply',
+      kind: 'number::math::multiply',
     });
   }
 }
