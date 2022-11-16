@@ -16,25 +16,35 @@ import {
 } from '../../node/nodeIndex';
 import { Icon, IconNames } from '../components/icons';
 import { NodeCategory } from '../../node/node.types';
-import { createPanelCard, createPanelCardHeader } from './panelCard';
+import { Header, PanelCard } from './panelCard';
 import { NodeTitles } from '../../node/nodeTitles';
 import { Vec2 } from '../../renderer/renderer.types';
 import { eventPos } from '../../utils/vectors';
 import { absoluteDiff } from '../../utils/data';
+import { Panel, SearchBar, TabSwitcher } from './panel';
 
 export const createNodePanel = (
   dispatchCreateNode: (kind: AnyNodeKey) => void,
   filters: NodeCategoryTitle[] = [],
 ) => {
-  const aside = element<HTMLElement>(
-    'aside',
-    cssSelectors.ui.panels.panel,
-    cssSelectors.ui.panels.left,
+  let textSearch = '';
+  const onSearch = (v: string) => {
+    textSearch = v;
+    console.log(textSearch);
+  };
+  const tab = {
+    name: 'Available Nodes',
+    content: [
+      SearchBar(onSearch, 'Find nodes...'),
+      createAllNodeCategoryCards(dispatchCreateNode, filters),
+    ],
+    id: 0,
+  };
+  return Panel(
+    'left',
+    [TabSwitcher([tab], 0)],
     cssSelectors.ui.panels.nodes.root,
   );
-  aside.append(createAllNodeCategoryCards(dispatchCreateNode, filters));
-
-  return aside;
 };
 
 export const nodesRepository: NodeRepository = {
@@ -95,8 +105,8 @@ export const createNodeCardButton = (
   dispatchCreateNode: () => void,
 ) => {
   const title = NodeTitles[nodeKind];
-  const category = nodeKind.split('::')[0] as NodeCategory;
-  const type = nodeKind.split('::')[1];
+  const type = nodeKind.split('::')[0];
+  const category = nodeKind.split('::')[1] as NodeCategory;
   const li = element<HTMLLIElement>(
     'li',
     cssSelectors.ui.panels.nodes.nodeCreateCard.root,
@@ -123,18 +133,13 @@ export const createNodeCategoryCard = (
   const { title, nodes } = category;
   const nodeList = element<HTMLUListElement>(
     'ul',
-    cssSelectors.ui.panels.nodes.nodeCategoryCard.list,
-  );
-  const categoryTitle = element<HTMLHeadingElement>(
-    'h2',
-    cssSelectors.ui.panels.nodes.nodeCategoryCard.title,
+    cssSelectors.ui.panelCard.list,
   );
   // format header with category header and icon.
   // TODO: category icon
   const icon = IconNames.includes(title) ? Icon(title) : Icon('help');
-  categoryTitle.innerText = title;
-  const header = createPanelCardHeader(
-    [icon, categoryTitle],
+  const header = Header(
+    [icon, PanelCard.Title(title)],
     cssSelectors.ui.panels.nodes.nodeCategoryCard.header,
   );
   // create node cards from node kinds in category
@@ -144,7 +149,7 @@ export const createNodeCategoryCard = (
     ),
   );
   // finally combine elements into node category card
-  return createPanelCard(
+  return PanelCard(
     [header, nodeList],
     cssSelectors.ui.panels.nodes.nodeCategoryCard.root,
   );
@@ -160,7 +165,7 @@ export const createAllNodeCategoryCards = (
   filters: NodeCategoryTitle[] = [],
 ) => {
   const list = element<HTMLDivElement>(
-    'list',
+    'div',
     cssSelectors.ui.panels.nodes.list,
     cssSelectors.ui.panels.body,
   );
