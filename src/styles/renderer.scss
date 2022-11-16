@@ -10,11 +10,29 @@
   bottom: 0;
   --translate-x: 0px;
   --translate-y: 0px;
+  --zoom-factor: 1;
+}
+
+.node__cards__root {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: visible;
+  transform: scale(var(--zoom-factor));
+  transform-origin: center center;
 }
 
 .node__card__root {
   --x-pos: 0px;
   --y-pos: 0px;
+  --x-translated: calc(var(--x-pos) + var(--translate-x));
+  --y-translated: calc(var(--y-pos) + var(--translate-y));
+  --x-center-coef: calc((50vw / var(--x-translated)));
+  --y-center-coef: calc((50vh / var(--y-translated)));
   position: absolute;
   border: 1px solid var(--dark-grey);
   border-radius: var(--unit-h);
@@ -22,10 +40,8 @@
   min-width: 200px;
   width: 200px;
   max-width: 200px;
-  transform: translate(
-    calc(var(--x-pos) + var(--translate-x)),
-    calc(var(--y-pos) + var(--translate-y))
-  );
+  transform-origin: center center;
+  transform: translate(var(--x-translated), var(--y-translated));
   z-index: 1;
   font-size: var(--unit);
 

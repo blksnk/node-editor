@@ -38,6 +38,7 @@ export const nodeCard = {
 
 export const renderer = {
   root: normalizeCssClass('node renderer root'),
+  cardsRoot: normalizeCssClass('node cards root'),
   svg: {
     root: normalizeCssClass('node svg root'),
     paths: normalizeCssClass('node connection paths'),

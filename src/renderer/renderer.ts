@@ -12,7 +12,7 @@ import {
   NodeWithId,
 } from '../node/node.types';
 import { Runtime } from '../runtime/runtime';
-import { eventPos, vecDelta } from '../utils/vectors';
+import { clamp, eventPos, mapRange, vecDelta } from '../utils/vectors';
 import {
   assignIoPositions,
   clearPendingConnection,
@@ -30,14 +30,19 @@ import {
 } from '../ui/components/card';
 import { getIoInformation } from '../ui/components/ioRow';
 import { KeyboardHandler } from '../keyboard/keyboard';
-import { element } from '../utils/document';
+import { DIV, element } from '../utils/document';
 import { cssSelectors } from '../ui/cssSelectors';
 import { createRendererSvg, resizeSvg } from './svg';
 import { AnyNodeKey } from '../node/nodeIndex';
 
+const SCROLL_MULTIPLIER = 0.01;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 2;
+
 export class Renderer {
-  root: HTMLDivElement;
   target: RendererOptions['target'];
+  root: HTMLDivElement;
+  cardsRoot: HTMLDivElement;
   svgRoot: SVGSVGElement;
   nodeCards: RendererNode[] = [];
   nodeConnections: RendererConnection[] = [];
@@ -56,12 +61,15 @@ export class Renderer {
   };
   selectedCardIds: Set<number> = new Set<number>();
   translationOffset: Vec2 = { x: 0, y: 0 };
+  zoomFactor = 1;
+  moveFactor = 1;
 
   constructor(options: RendererOptions) {
     this.target = options.target;
     this.runtime = options.runtime;
     this.keyboard = options.keyboard;
     this.root = element<HTMLDivElement>('div', cssSelectors.renderer.root);
+    this.cardsRoot = DIV([], cssSelectors.renderer.cardsRoot);
     this.svgRoot = createRendererSvg();
     this.attachRoot();
     this.initGlobalEvents();
@@ -85,7 +93,7 @@ export class Renderer {
       (ioId: number, value: DefinedIOType, kind: NodeIO['kind']) =>
         this.runtime.setNodeIoValue(node.id, ioId, value, kind),
     );
-    this.root.appendChild(card);
+    this.cardsRoot.appendChild(card);
     setCardPosition(card, position);
     const rendererNode = {
       card,
@@ -196,8 +204,9 @@ export class Renderer {
   }
 
   private attachRoot() {
-    this.target.appendChild(this.root);
     this.root.appendChild(this.svgRoot);
+    this.root.appendChild(this.cardsRoot);
+    this.target.appendChild(this.root);
   }
 
   private initCardEvents({ io, header, card, id }: RendererNode) {
@@ -452,8 +461,15 @@ export class Renderer {
   }
 
   private moveNodeCard(nodeCard: RendererNode, delta: Vec2) {
-    nodeCard.position.x += delta.x;
-    nodeCard.position.y += delta.y;
+    const zoom =
+      ZOOM_MAX - mapRange(this.zoomFactor, ZOOM_MIN, ZOOM_MAX, 0.2, 1);
+    const zoomCorrected = {
+      x: delta.x * this.moveFactor,
+      y: delta.y * this.moveFactor,
+    };
+    console.log(zoom);
+    nodeCard.position.x += zoomCorrected.x;
+    nodeCard.position.y += zoomCorrected.y;
     setCardPosition(nodeCard.card, nodeCard.position);
   }
 
@@ -489,8 +505,21 @@ export class Renderer {
   }
 
   private onWheel(e: WheelEvent) {
-    this.translationOffset.x -= e.deltaX;
-    this.translationOffset.y -= e.deltaY;
+    if (this.keyboard.meta || this.keyboard.ctrl) {
+      this.zoomFactor = clamp(
+        this.zoomFactor - e.deltaY * SCROLL_MULTIPLIER,
+        ZOOM_MIN,
+        ZOOM_MAX,
+      );
+      this.moveFactor = clamp(
+        this.moveFactor + e.deltaY * SCROLL_MULTIPLIER,
+        ZOOM_MIN,
+        ZOOM_MAX,
+      );
+    } else {
+      this.translationOffset.x -= e.deltaX;
+      this.translationOffset.y -= e.deltaY;
+    }
     this.updateTranslation();
   }
 
@@ -503,6 +532,7 @@ export class Renderer {
       '--translate-y',
       this.translationOffset.y + 'px',
     );
+    this.root.style.setProperty('--zoom-factor', String(this.zoomFactor));
     this.updateConnectionCoords(this.runtime.connections);
   }
 }
