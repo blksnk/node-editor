@@ -20,10 +20,8 @@ export const IOTypeNames = [
 ] as const;
 
 export const NodeCategories = [
+  ...IOTypeNames,
   'logic',
-  'value',
-  'math',
-  'booleanMath',
   'base',
   'runtime',
 ] as const;
