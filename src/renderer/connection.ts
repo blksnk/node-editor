@@ -82,11 +82,16 @@ export const getIOIndicatorPosition = (ioRow: HTMLLIElement): Vec2 => {
   };
 };
 
-export const getConnectionGradientId = (connection: RendererConnection) =>
-  cssSelectors.renderer.svg.gradientId(
+export const getConnectionGradientId = (connection: RendererConnection) => {
+  const colors: [IOTypeName, IOTypeName] = [
     getSingleType(connection.outputNode.type),
     getSingleType(connection.inputNode.type),
-  );
+  ];
+  if (connection.inputNode.position.x < connection.outputNode.position.x) {
+    colors.reverse();
+  }
+  return cssSelectors.renderer.svg.gradientId(...colors);
+};
 
 export const renderConnections = (
   connections: RendererConnection[],
