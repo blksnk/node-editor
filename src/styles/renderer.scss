@@ -72,6 +72,10 @@
     }
   }
 
+  &.node__category__logic {
+    --bg: var(--white-50);
+  }
+
   .node__help__button {
     opacity: 0.5;
 
@@ -185,6 +189,8 @@
   &.node__io__multi {
     height: var(--unit-d);
   }
+
+  @include vars.type-var(--type);
 }
 
 .node__io__name {

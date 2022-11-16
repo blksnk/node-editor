@@ -13,12 +13,17 @@
   --black--pure: #000;
 
   --number: #5cceff;
+  --number-text: #5eaccd;
   --boolean: #3c4de9;
+  --boolean-text: #8f70e7;
   --string: #afb203;
+  --string-text: #f2f495;
   --object: #d48af6;
+  --object-text: #d6a3ed;
+  --array: #61bb6a;
+  --array-text: #a1f8aa;
   --any: #fff;
   --property: #ffae33;
-  --array: #61bb6a;
 
   --unit: 12px;
   --unit-h: calc(var(--unit) / 2);
@@ -59,11 +64,43 @@
   }
 }
 
+@mixin text-type-var($prop: '--type') {
+  &.node__type__number {
+    #{$prop}: var(--number-text);
+  }
+
+  &.node__type__object {
+    #{$prop}: var(--object-text);
+  }
+
+  &.node__type__string {
+    #{$prop}: var(--string-text);
+  }
+
+  &.node__type__boolean {
+    #{$prop}: var(--boolean-text);
+  }
+}
+
 @mixin node-title {
   font-family: var(--f-sans);
   font-weight: 600;
   font-size: var(--unit);
   color: var(--white);
+}
+
+@mixin font-code {
+  font-family: var(--f-mono);
+  font-size: var(--unit);
+  font-weight: 500;
+  line-height: 16px;
+  font-feature-settings: 'tnum' on, 'lnum' on;
+}
+
+@mixin font-code-small {
+  @include font-code;
+  font-size: 10px;
+  line-height: unset;
 }
 
 @mixin node-io-name {
@@ -74,8 +111,7 @@
 }
 
 @mixin node-io-value {
-  font-family: var(--f-mono);
-  font-size: 10px;
+  @include font-code-small;
   font-weight: 400;
   color: var(--white-50);
 }
@@ -85,6 +121,13 @@
   font-size: 16px;
   font-weight: 500;
   color: var(--white);
+}
+
+@mixin tab-title {
+  font-family: var(--f-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--white-50);
 }
 
 @mixin flex-column($gap: var(--unit)) {

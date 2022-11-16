@@ -27,6 +27,10 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+input {
+  border: none
+}
+
 a {
   font-weight: 500;
   color: #646cff;

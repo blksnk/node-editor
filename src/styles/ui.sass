@@ -20,13 +20,34 @@
   min-width: 200px
   z-index: 100
   pointer-events: all
-  @include vars.flex-column(var(--unit-d))
 
   &.ui__panel__left
     left: 0
 
   &.ui__panel__right
     right: 0
+
+  .ui__panel__tab__container
+    height: 100%
+    @include vars.flex-column(var(--unit-d))
+
+  .ui__panel__header
+    width: 100%
+    background: var(--black)
+    height: min-content
+
+  .ui__panel__tab__bar
+    @include vars.flex-row(flex-start, baseline)
+
+  .ui__panel__tab__button
+    background: var(--black)
+    padding: var(--unit) var(--unit-d)
+    @include vars.tab-title
+
+    &.ui__panel__tab__button__active
+      background: var(--off-black)
+      color: var(--white)
+      text-decoration: underline
 
   .ui__panel__body
     flex-grow: 1
@@ -35,6 +56,7 @@
     padding-bottom: var(--unit-d)
     overflow-y: auto
     @include vars.flex-column(var(--unit))
+
 
 .ui__panel__card
   background: var(--black)
@@ -48,17 +70,22 @@
     @include vars.flex-row('flex-start')
     gap: var(--unit-h)
 
+  .ui__panel__card__title
+    @include vars.node-category-title
+
+  .ui__panel__card__indicator
+    position: relative
+
+  .ui__panel__card__list
+    @include vars.flex-column(var(--unit))
+    width: 100%
+
+
 .ui__panel__nodes__category
 
   .ui__panel__nodes__category__header
     @include vars.flex-row()
 
-    .ui__panel__nodes__category__title
-      @include vars.node-category-title
-
-  .ui__panel__nodes__category__list
-    @include vars.flex-column(var(--unit))
-    width: 100%
 
   .ui__node__create__card__root
     @include vars.flex-column(0)
@@ -71,10 +98,10 @@
     &.node__category__value
       @include vars.type-var(--bg)
 
-    &.node__category__logic
+    &.node__type__logic
       --bg: var(--white-50)
 
-    &.node__category__runtime.node__type__output
+    &.node__category__output.node__type__runtime
       --bg: var(--white)
 
       h3
@@ -85,6 +112,7 @@
 
     .ui__node__create__card__button
       @include vars.flex-row()
+      gap: var(--unit)
       background: var(--bg)
       width: 100%
       padding: calc(var(--unit) - 1px)
@@ -102,5 +130,40 @@
           fill-opacity: 1
 
 
+.ui__panel__search__root
+  width: 100%
+  @include vars.flex-row()
+  gap: var(--unit-h)
+  padding: 0 var(--unit)
 
+  .ui__panel__search__button
+    font-family: var(--f-sans)
+    font-size: var(--unit)
+    font-weight: 700
+    border-radius: var(--unit-h)
+    background: var(--black--pure)
+    color: var(--white)
+    padding: var(--unit)
 
+  .ui__panel__search__input
+    background: var(--black)
+    border-radius: var(--unit-h)
+    padding: var(--unit)
+    flex-grow: 1
+    height: 100%
+    @include vars.node-io-value
+
+.ui__output__row
+  @include vars.flex-row(flex-start, baseline)
+  gap: var(--unit)
+  width: 100%
+
+  .ui__output__row__name, .ui__output__row__value
+    @include vars.font-code
+
+  .ui__output__row__name
+    color: var(--white-50)
+
+  .ui__output__row__value
+    @include vars.text-type-var()
+    color: var(--type)
