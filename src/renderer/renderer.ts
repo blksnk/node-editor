@@ -55,6 +55,7 @@ export class Renderer {
     active: false,
   };
   selectedCardIds: Set<number> = new Set<number>();
+  translationOffset: Vec2 = { x: 0, y: 0 };
 
   constructor(options: RendererOptions) {
     this.target = options.target;
@@ -235,6 +236,7 @@ export class Renderer {
     window.addEventListener('pointerup', this.onGlobalUp.bind(this));
     window.addEventListener('pointermove', this.onGlobalMove.bind(this));
     window.addEventListener('resize', this.onWindowResize.bind(this));
+    window.addEventListener('wheel', this.onWheel.bind(this));
     this.root.addEventListener('pointerup', this.unselectAllCards.bind(this));
   }
 
@@ -484,5 +486,23 @@ export class Renderer {
       this.selectedCardIds.add(id);
     });
     this.highlightSelectedCards();
+  }
+
+  private onWheel(e: WheelEvent) {
+    this.translationOffset.x -= e.deltaX;
+    this.translationOffset.y -= e.deltaY;
+    this.updateTranslation();
+  }
+
+  private updateTranslation() {
+    this.root.style.setProperty(
+      '--translate-x',
+      this.translationOffset.x + 'px',
+    );
+    this.root.style.setProperty(
+      '--translate-y',
+      this.translationOffset.y + 'px',
+    );
+    this.updateConnectionCoords(this.runtime.connections);
   }
 }
