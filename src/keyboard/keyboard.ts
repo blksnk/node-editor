@@ -20,10 +20,16 @@ export class KeyboardHandler {
   public addListener(
     eventType: KeyboardEventType,
     callback: KeyboardEventCallback,
+    {
+      prevent = false,
+    }: {
+      prevent?: boolean;
+    } = {},
   ) {
     this.listeners.push({
       eventType,
       callback,
+      prevent,
     });
   }
 
@@ -45,14 +51,14 @@ export class KeyboardHandler {
 
   private onKeyDown(e: KeyboardEvent) {
     this.setMetaKeys(e);
-    this.setKey(e.key, true);
-    this.callListeners('keydown');
+    this.setKey(e.key, true, e);
+    this.callListeners('keydown', e);
   }
 
   private onKeyUp(e: KeyboardEvent) {
     this.setMetaKeys(e);
-    this.setKey(e.key, false);
-    this.callListeners('keyup');
+    this.setKey(e.key, false, e);
+    this.callListeners('keyup', e);
   }
 
   private setMetaKeys(e: KeyboardEvent) {
@@ -62,19 +68,22 @@ export class KeyboardHandler {
     this.ctrl = e.ctrlKey;
   }
 
-  private setKey(key: string, value: boolean) {
+  private setKey(key: string, value: boolean, e: KeyboardEvent) {
     this.lastKey = key;
     const prevValue = { ...this.pressedDownKeys }[key];
     this.pressedDownKeys[key] = value;
     if (prevValue !== value) {
-      this.callListeners('change');
+      this.callListeners('change', e);
     }
   }
 
-  private callListeners(type: KeyboardEventType) {
+  private callListeners(type: KeyboardEventType, e: KeyboardEvent) {
     this.listeners
       .filter(({ eventType }) => eventType === type || eventType === 'all')
       .forEach((l) => {
+        if (l.prevent) {
+          e.preventDefault();
+        }
         const payload = {
           eventType: type,
           keys: this.pressedDownKeys,
@@ -83,6 +92,7 @@ export class KeyboardHandler {
           meta: this.meta,
           ctrl: this.ctrl,
           key: this.lastKey as string,
+          genericEvent: e,
         };
         l.callback(payload);
       });

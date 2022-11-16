@@ -10,6 +10,7 @@ export interface KeyboardEventPayload {
   keys: {
     [k: string]: boolean;
   };
+  genericEvent: KeyboardEvent;
 }
 
 export type KeyboardEventCallback = (e: KeyboardEventPayload) => void;
@@ -17,4 +18,5 @@ export type KeyboardEventCallback = (e: KeyboardEventPayload) => void;
 export interface KeyboardListener {
   eventType: KeyboardEventType;
   callback: KeyboardEventCallback;
+  prevent?: boolean;
 }
