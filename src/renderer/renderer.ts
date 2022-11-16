@@ -33,6 +33,7 @@ import { KeyboardHandler } from '../keyboard/keyboard';
 import { element } from '../utils/document';
 import { cssSelectors } from '../ui/cssSelectors';
 import { createRendererSvg, resizeSvg } from './svg';
+import { AnyNodeKey } from '../node/nodeIndex';
 
 export class Renderer {
   root: HTMLDivElement;
@@ -47,6 +48,7 @@ export class Renderer {
   mouseDown = false;
   cardMoving = false;
   hasMoved = false;
+  duplicateCardCreated = false;
   pendingConnection: PendingRendererConnection = {
     inputNode: undefined,
     outputNode: undefined,
@@ -163,6 +165,15 @@ export class Renderer {
     );
   }
 
+  onGlobalUp(e: PointerEvent) {
+    this.mouseDown = false;
+    this.cardMoving = false;
+    this.hasMoved = false;
+    this.duplicateCardCreated = false;
+    this.mousePos = eventPos(e);
+    this.resetPendingConnection();
+  }
+
   private onCardDown(nodeId: number) {
     if (!this.selectedCardIds.has(nodeId) && !this.keyboard.shift) {
       this.resetSelectedCards();
@@ -229,10 +240,14 @@ export class Renderer {
 
   private initKeyboardEvents() {
     this.keyboard.addListener('keydown', (e) => {
-      if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (
+        e.key === 'Delete' ||
+        ((this.keyboard.meta || this.keyboard.ctrl) && e.key === 'Backspace')
+      ) {
         this.deleteSelectedCards();
       }
       if ((e.ctrl || e.meta) && (e.key === 'a' || e.key === 'A')) {
+        e.genericEvent.preventDefault();
         this.selectAllCards();
       }
     });
@@ -387,14 +402,6 @@ export class Renderer {
     clearPendingConnection(this.svgRoot);
   }
 
-  private onGlobalUp(e: PointerEvent) {
-    this.mouseDown = false;
-    this.cardMoving = false;
-    this.hasMoved = false;
-    this.mousePos = eventPos(e);
-    this.resetPendingConnection();
-  }
-
   private onGlobalMove(e: PointerEvent) {
     const lastMousePos = { ...this.mousePos };
     this.mousePos = eventPos(e);
@@ -403,9 +410,14 @@ export class Renderer {
     if (this.selectedCardIds.size > 0 && this.mouseDown && this.cardMoving) {
       if (this.movingNodeCards.length === 0) return;
       this.hasMoved = true;
+      // duplicate cards
+      if (this.keyboard.alt && !this.duplicateCardCreated) {
+        this.duplicateSelectedNodeCards();
+      }
       this.movingNodeCards.forEach((card) => {
         this.moveNodeCard(card, delta);
       });
+      this.updateConnectionCoords(this.runtime.connections);
     }
     // handle pending connection
     connectionUpdate: if (this.pendingConnection.active) {
@@ -425,11 +437,22 @@ export class Renderer {
     }
   }
 
+  private duplicateSelectedNodeCards() {
+    this.duplicateCardCreated = true;
+    // create new cards based on source cards kind and position
+    const duplicatedNodes = this.movingNodeCards.map(({ node, position }) =>
+      this.runtime.createNode(node.kind as AnyNodeKey, position),
+    );
+    // select all newly created node cards
+    this.resetSelectedCards();
+    duplicatedNodes.forEach(({ id }) => this.selectedCardIds.add(id));
+    this.highlightSelectedCards();
+  }
+
   private moveNodeCard(nodeCard: RendererNode, delta: Vec2) {
     nodeCard.position.x += delta.x;
     nodeCard.position.y += delta.y;
     setCardPosition(nodeCard.card, nodeCard.position);
-    this.updateConnectionCoords(this.runtime.connections);
   }
 
   private onCardHeaderDown(e: PointerEvent) {
