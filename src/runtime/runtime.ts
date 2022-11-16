@@ -72,6 +72,7 @@ export class Runtime {
     this.nodes.push(withId);
     this.renderer.attachNode(withId, position);
     this.updateConnections();
+    return withId;
   }
 
   updateConnections() {
@@ -110,7 +111,7 @@ export class Runtime {
 
   createNode(k: AnyNodeKey, position?: Vec2) {
     const node = new NodeIndex[k]();
-    this.registerNode(node, position);
+    return this.registerNode(node, position);
   }
 
   public deleteMultipleNodes(toDeleteIds: number[]) {
